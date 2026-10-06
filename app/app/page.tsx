@@ -108,7 +108,7 @@ function CommandPalette({ onClose, onNavigate }: { onClose: () => void; onNaviga
 function AddLeadModal({ onClose, onAdd }: { onClose: () => void; onAdd: (lead: Partial<Lead>) => void }) {
   const [form, setForm] = useState({ name: '', company: '', email: '', phone: '', status: 'warm', value: '', source: 'Website widget', notes: '' });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const submit = (e: React.FormEvent) => { e.preventDefault(); onAdd(form); onClose(); };
+  const submit = (e: React.FormEvent) => { e.preventDefault(); onAdd({ name: form.name, company: form.company, email: form.email, phone: form.phone, source: form.source, notes: form.notes, status: form.status as Lead['status'], value: parseFloat(form.value) || 0 }); onClose(); };
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -182,7 +182,7 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void; onAdd: (lead: P
 function AddInvoiceModal({ onClose, onAdd }: { onClose: () => void; onAdd: (inv: Partial<Invoice>) => void }) {
   const [form, setForm] = useState({ client: '', email: '', dueDate: '', description: '', amount: '' });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const submit = (e: React.FormEvent) => { e.preventDefault(); onAdd(form); onClose(); };
+  const submit = (e: React.FormEvent) => { e.preventDefault(); onAdd({ ...form, amount: parseFloat(form.amount) || 0 }); onClose(); };
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -229,7 +229,7 @@ function AddInvoiceModal({ onClose, onAdd }: { onClose: () => void; onAdd: (inv:
 function BookSlotModal({ onClose, onAdd }: { onClose: () => void; onAdd: (a: Partial<Appointment>) => void }) {
   const [form, setForm] = useState({ title: '', client: '', date: '', time: '10:00', duration: '60', notes: '' });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const submit = (e: React.FormEvent) => { e.preventDefault(); onAdd(form); onClose(); };
+  const submit = (e: React.FormEvent) => { e.preventDefault(); onAdd({ ...form, duration: parseInt(form.duration, 10) || 60 }); onClose(); };
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -482,7 +482,7 @@ function OverviewPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
                 <Tooltip
                   contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', borderRadius: 8, fontSize: 12 }}
                   cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                  formatter={(v: number) => [`$${v.toLocaleString()}`, 'Value']}
+                  formatter={(v) => [`$${Number(v ?? 0).toLocaleString()}`, 'Value']}
                 />
                 <Bar dataKey="value" fill="var(--accent-purple)" radius={[4, 4, 0, 0]}
                   label={false}
