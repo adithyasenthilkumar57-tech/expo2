@@ -1,0 +1,475 @@
+{
+  "leads": [
+    {
+      "id": "29801528-c344-4a64-bf6a-09eeb18c17eb",
+      "name": "Hi, can",
+      "company": "Widget Prospect",
+      "email": "test.lead@example.com",
+      "status": "warm",
+      "score": 75,
+      "value": 10000,
+      "source": "Website widget",
+      "notes": "Captured from live smart widget conversation: \"Hi, can I get a quote? My email is test.lead@example.com\"",
+      "createdAt": "2026-10-06T06:18:21.477Z",
+      "lastTouch": "2026-10-06T06:18:21.477Z"
+    },
+    {
+      "id": "200f5415-60a0-4507-b273-421222f1414c",
+      "name": "Sarah Mitchell",
+      "company": "TechCorp",
+      "email": "sarah@techcorp.com",
+      "phone": "+1 555-0101",
+      "status": "hot",
+      "score": 92,
+      "value": 15000,
+      "source": "Website widget",
+      "notes": "Very interested in the enterprise plan. Has budget approval.",
+      "createdAt": "2026-10-04T06:18:20.608Z",
+      "lastTouch": "2026-10-06T06:18:20.608Z"
+    },
+    {
+      "id": "6ab10565-3b0f-437a-a904-6d2e0f3b3edb",
+      "name": "James Okafor",
+      "company": "Sora Tech",
+      "email": "james@soratech.io",
+      "phone": "+1 555-0102",
+      "status": "hot",
+      "score": 85,
+      "value": 10000,
+      "source": "Website widget",
+      "notes": "Needs implementation support.",
+      "createdAt": "2026-10-03T06:18:20.608Z",
+      "lastTouch": "2026-10-06T06:18:20.608Z"
+    },
+    {
+      "id": "df08e1e4-983b-414b-a10e-285e7ff97d53",
+      "name": "Browser Journey",
+      "company": "Journey Labs",
+      "email": "contact@journeylabs.co",
+      "phone": "+1 555-0103",
+      "status": "hot",
+      "score": 81,
+      "value": 22000,
+      "source": "Referral",
+      "notes": "Complex requirements, multiple departments involved.",
+      "createdAt": "2026-10-01T06:18:20.608Z",
+      "lastTouch": "2026-10-05T06:18:20.608Z"
+    },
+    {
+      "id": "96c3f5fa-f94f-4f90-9dd0-5fa98bb87d52",
+      "name": "Smoke Operator",
+      "company": "Smoke Systems",
+      "email": "ops@smokesystems.net",
+      "phone": "+1 555-0104",
+      "status": "hot",
+      "score": 78,
+      "value": 8500,
+      "source": "Website widget",
+      "notes": "",
+      "createdAt": "2026-09-30T06:18:20.608Z",
+      "lastTouch": "2026-10-05T06:18:20.608Z"
+    },
+    {
+      "id": "b3e1e322-d051-4b7d-83a0-4a273db35fa5",
+      "name": "Lisa Park",
+      "company": "NovaBridge",
+      "email": "lisa@novabridge.com",
+      "phone": "+1 555-0105",
+      "status": "hot",
+      "score": 76,
+      "value": 18000,
+      "source": "Cold outreach",
+      "notes": "",
+      "createdAt": "2026-09-29T06:18:20.608Z",
+      "lastTouch": "2026-10-04T06:18:20.608Z"
+    },
+    {
+      "id": "ddbaa9fb-8d6e-4771-a4e2-dfbef89facc6",
+      "name": "David Chen",
+      "company": "QuantumFlow",
+      "email": "david@quantumflow.ai",
+      "status": "hot",
+      "score": 74,
+      "value": 30000,
+      "source": "LinkedIn",
+      "notes": "Large enterprise deal.",
+      "createdAt": "2026-09-28T06:18:20.608Z",
+      "lastTouch": "2026-10-04T06:18:20.608Z"
+    },
+    {
+      "id": "a9ec62a3-4215-4732-9fde-1b18e20bf9e2",
+      "name": "Emma Rodriguez",
+      "company": "Apex Digital",
+      "email": "emma@apexdigital.com",
+      "status": "warm",
+      "score": 65,
+      "value": 12000,
+      "source": "Website widget",
+      "notes": "",
+      "createdAt": "2026-09-26T06:18:20.608Z",
+      "lastTouch": "2026-10-03T06:18:20.608Z"
+    },
+    {
+      "id": "ebf56233-16a3-4b09-935b-7e676daa7db3",
+      "name": "Marcus Webb",
+      "company": "Stellar Works",
+      "email": "marcus@stellarworks.io",
+      "status": "warm",
+      "score": 60,
+      "value": 9000,
+      "source": "Referral",
+      "notes": "",
+      "createdAt": "2026-09-24T06:18:20.608Z",
+      "lastTouch": "2026-10-02T06:18:20.608Z"
+    },
+    {
+      "id": "e5aa76df-47d0-44fc-8b45-4fb003224026",
+      "name": "Priya Sharma",
+      "company": "DataForge",
+      "email": "priya@dataforge.co",
+      "status": "warm",
+      "score": 58,
+      "value": 7500,
+      "source": "Cold outreach",
+      "notes": "",
+      "createdAt": "2026-09-22T06:18:20.608Z",
+      "lastTouch": "2026-10-01T06:18:20.608Z"
+    },
+    {
+      "id": "9db7c574-91f3-4f82-aa1f-588f5ba77667",
+      "name": "Tom Bradley",
+      "company": "CloudPeak",
+      "email": "tom@cloudpeak.net",
+      "status": "warm",
+      "score": 55,
+      "value": 5000,
+      "source": "LinkedIn",
+      "notes": "",
+      "createdAt": "2026-09-21T06:18:20.608Z",
+      "lastTouch": "2026-10-01T06:18:20.608Z"
+    },
+    {
+      "id": "e6add4d8-66b2-4fed-9b36-e071c340c3db",
+      "name": "Aisha Jackson",
+      "company": "Momentum Co",
+      "email": "aisha@momentumco.com",
+      "status": "warm",
+      "score": 52,
+      "value": 11000,
+      "source": "Website widget",
+      "notes": "",
+      "createdAt": "2026-09-18T06:18:20.608Z",
+      "lastTouch": "2026-09-29T06:18:20.608Z"
+    },
+    {
+      "id": "0c58cf79-0f76-4204-bdb9-8fc387e83ec2",
+      "name": "Robert Kim",
+      "company": "Pinnacle Group",
+      "email": "robert@pinnaclegroup.com",
+      "status": "cold",
+      "score": 38,
+      "value": 4000,
+      "source": "Cold outreach",
+      "notes": "",
+      "createdAt": "2026-09-16T06:18:20.608Z",
+      "lastTouch": "2026-09-26T06:18:20.608Z"
+    },
+    {
+      "id": "9aaf3f72-07f8-4a25-9e14-85a1458958f8",
+      "name": "Nina Petrova",
+      "company": "Vortex Media",
+      "email": "nina@vortexmedia.com",
+      "status": "cold",
+      "score": 30,
+      "value": 3500,
+      "source": "LinkedIn",
+      "notes": "",
+      "createdAt": "2026-09-11T06:18:20.608Z",
+      "lastTouch": "2026-09-22T06:18:20.608Z"
+    },
+    {
+      "id": "bbbd27f4-8ed8-4243-9b7b-b0ced7df4ff1",
+      "name": "Chris Nguyen",
+      "company": "RedSpark Labs",
+      "email": "chris@redspark.io",
+      "status": "escalated",
+      "score": 88,
+      "value": 25000,
+      "source": "Referral",
+      "notes": "Escalated by operator — high urgency, competitor evaluation underway.",
+      "createdAt": "2026-10-05T06:18:20.608Z",
+      "lastTouch": "2026-10-06T06:18:20.608Z"
+    }
+  ],
+  "invoices": [
+    {
+      "id": "41d11225-4a22-4081-8eb4-56629014ef19",
+      "invoiceNumber": "INV-2026-004",
+      "client": "TechCorp",
+      "email": "billing@techcorp.com",
+      "amount": 8500,
+      "dueDate": "2026-03-18",
+      "status": "sent",
+      "items": [
+        {
+          "description": "Discovery Engagement",
+          "quantity": 1,
+          "unitPrice": 8500
+        }
+      ],
+      "createdAt": "2026-09-26T06:18:20.608Z",
+      "lastReminderSent": "2026-10-06T06:19:31.780Z"
+    },
+    {
+      "id": "d6b1e9de-4b0b-4129-8144-30550192a6c4",
+      "invoiceNumber": "INV-2026-003",
+      "client": "NovaBridge",
+      "email": "finance@novabridge.com",
+      "amount": 12400,
+      "dueDate": "2026-02-28",
+      "status": "overdue",
+      "items": [
+        {
+          "description": "Implementation Package",
+          "quantity": 1,
+          "unitPrice": 12400
+        }
+      ],
+      "createdAt": "2026-08-22T06:18:20.608Z"
+    },
+    {
+      "id": "990d0887-e038-4cb9-a9e4-1b4c6850c370",
+      "invoiceNumber": "INV-2026-002",
+      "client": "Journey Labs",
+      "email": "accounts@journeylabs.co",
+      "amount": 6800,
+      "dueDate": "2026-01-15",
+      "status": "paid",
+      "items": [
+        {
+          "description": "Consulting Retainer - Q1",
+          "quantity": 2,
+          "unitPrice": 3400
+        }
+      ],
+      "createdAt": "2026-07-18T06:18:20.608Z"
+    },
+    {
+      "id": "491c9a6b-056d-4956-b1c8-b391e5e0aecf",
+      "invoiceNumber": "INV-2026-001",
+      "client": "Smoke Systems",
+      "email": "billing@smokesystems.net",
+      "amount": 4200,
+      "dueDate": "2026-01-05",
+      "status": "paid",
+      "items": [
+        {
+          "description": "Strategy Workshop",
+          "quantity": 3,
+          "unitPrice": 1400
+        }
+      ],
+      "createdAt": "2026-07-08T06:18:20.608Z"
+    },
+    {
+      "id": "060acbb0-423a-4804-ad03-4c3e029fc37f",
+      "invoiceNumber": "INV-2025-012",
+      "client": "DataForge",
+      "email": "admin@dataforge.co",
+      "amount": 5500,
+      "dueDate": "2026-04-01",
+      "status": "draft",
+      "items": [
+        {
+          "description": "Platform Setup",
+          "quantity": 1,
+          "unitPrice": 5500
+        }
+      ],
+      "createdAt": "2026-10-05T06:18:20.608Z"
+    }
+  ],
+  "appointments": [
+    {
+      "id": "b62b0efa-e042-4c2a-a1cd-9ae450fc6c3d",
+      "title": "Discovery Call",
+      "client": "Sarah Mitchell",
+      "date": "2026-10-08",
+      "time": "10:00",
+      "duration": 60,
+      "status": "confirmed",
+      "notes": "Enterprise plan walkthrough",
+      "createdAt": "2026-10-03T06:18:20.608Z"
+    },
+    {
+      "id": "776dd39f-def5-40e9-903e-ae9cfd248ad9",
+      "title": "Demo Presentation",
+      "client": "Chris Nguyen",
+      "date": "2026-10-09",
+      "time": "14:00",
+      "duration": 90,
+      "status": "confirmed",
+      "notes": "Show RedSpark integration",
+      "createdAt": "2026-10-04T06:18:20.608Z"
+    },
+    {
+      "id": "a561213d-0531-42c7-ad50-99aafe7a715c",
+      "title": "Follow-up Call",
+      "client": "Emma Rodriguez",
+      "date": "2026-10-11",
+      "time": "11:30",
+      "duration": 30,
+      "status": "pending",
+      "notes": "",
+      "createdAt": "2026-10-05T06:18:20.608Z"
+    }
+  ],
+  "knowledge": [
+    {
+      "id": "7c973993-bb11-4428-a74d-1adb45d29a69",
+      "name": "Service & pricing guide.pdf",
+      "type": "pdf",
+      "content": "Our standard discovery engagement starts at $8,500 and includes a 30-day implementation window. Enterprise plans start at $15,000/month with dedicated support. We specialize in autonomous operations, CRM workflows, automated invoicing, appointment synchronization, and conversational AI agents. Our SLA guarantees an average response time of under 90 seconds.",
+      "synced": true,
+      "createdAt": "2026-09-06T06:18:20.608Z"
+    },
+    {
+      "id": "c78443c9-8bc3-4738-836e-de1ee31a1665",
+      "name": "Company FAQs",
+      "type": "text",
+      "content": "Apex Consulting builds autonomous operations platforms for high-velocity teams. We support 50+ integrations including HubSpot, Salesforce, Stripe, QuickBooks, Google Calendar, and Slack. All client data is encrypted at rest and in transit with SOC-2 compliant infrastructure.",
+      "synced": true,
+      "createdAt": "2026-09-16T06:18:20.608Z"
+    },
+    {
+      "id": "e25f5389-1ade-4f98-bbc3-b7972c92b8e9",
+      "name": "Operating SLA & Support Matrix",
+      "type": "text",
+      "content": "Standard operating hours: 24/7 autonomous monitoring. Automated dunning sequences trigger 3 days prior to invoice due date and follow up at 1, 5, and 14 days overdue. High-value leads ($10k+) trigger instant priority escalation to account executives.",
+      "synced": true,
+      "createdAt": "2026-09-26T06:18:20.608Z"
+    }
+  ],
+  "activity": [
+    {
+      "id": "20212a64-c622-4985-9ebc-a8c1193883c2",
+      "type": "dunning_sent",
+      "title": "Dunning sequence triggered",
+      "description": "Automated payment reminder dispatched to billing@techcorp.com for INV-2026-004 ($8,500).",
+      "timestamp": "2026-10-06T06:19:31.802Z"
+    },
+    {
+      "id": "4923c73c-1a79-43ee-97a3-43eb4201b9b2",
+      "type": "agent_response",
+      "title": "Widget conversation response",
+      "description": "OpsAgent autonomously replied to visitor: \"Hi, can I get a quote? My email is test....\"",
+      "timestamp": "2026-10-06T06:18:21.485Z"
+    },
+    {
+      "id": "fc679a8c-b604-492e-980c-eefe899d5049",
+      "type": "lead_captured",
+      "title": "New lead captured via widget",
+      "description": "Hi, can (test.lead@example.com) entered the pipeline.",
+      "timestamp": "2026-10-06T06:18:21.481Z"
+    },
+    {
+      "id": "0ba9661f-e793-42c7-bf38-ed56fd659505",
+      "type": "agent_response",
+      "title": "Grounding query evaluated",
+      "description": "Grounding inspector verified response for: \"What does discovery cost?...\" (99% confidence)",
+      "timestamp": "2026-10-06T06:18:20.630Z"
+    },
+    {
+      "id": "3e300d2c-a6bd-4ac4-ac2a-18c2c4e6ec83",
+      "type": "lead_captured",
+      "title": "New lead captured",
+      "description": "Sarah Mitchell from TechCorp entered the pipeline.",
+      "timestamp": "2026-10-06T06:18:20.608Z"
+    },
+    {
+      "id": "0484a225-950a-4519-838f-8e4e67192d54",
+      "type": "lead_captured",
+      "title": "New lead captured",
+      "description": "Browser Journey from Journey Labs entered the pipeline.",
+      "timestamp": "2026-10-06T06:18:20.608Z"
+    },
+    {
+      "id": "d2f132d7-e56e-4288-87b0-2e55345d5186",
+      "type": "lead_captured",
+      "title": "New lead captured",
+      "description": "Smoke Operator from Smoke Systems entered the pipeline.",
+      "timestamp": "2026-10-06T06:18:20.608Z"
+    },
+    {
+      "id": "b9645286-b986-4ad2-b6bc-48115b0c9845",
+      "type": "lead_qualified",
+      "title": "Lead qualified as hot",
+      "description": "Sarah Mitchell · TechCorp · $15,000 budget",
+      "timestamp": "2026-10-06T06:18:20.608Z"
+    },
+    {
+      "id": "0b683c77-0363-47eb-b9e5-4fe44ae258c9",
+      "type": "invoice_sent",
+      "title": "Invoice sent",
+      "description": "INV-2026-004 sent to TechCorp for $8,500",
+      "timestamp": "2026-10-05T06:18:20.608Z"
+    },
+    {
+      "id": "289274ac-3e2f-4da9-8bbd-acf319f52548",
+      "type": "appointment_booked",
+      "title": "Appointment booked",
+      "description": "Discovery Call with Sarah Mitchell confirmed for next week.",
+      "timestamp": "2026-10-04T06:18:20.608Z"
+    },
+    {
+      "id": "429d1a35-0f40-4e32-a6de-4a2486e7101e",
+      "type": "invoice_paid",
+      "title": "Invoice paid",
+      "description": "Journey Labs paid INV-2026-002 — $6,800 collected.",
+      "timestamp": "2026-10-03T06:18:20.608Z"
+    },
+    {
+      "id": "a1a6a128-7280-4614-acc8-7287e6b0f627",
+      "type": "agent_response",
+      "title": "Agent responded",
+      "description": "Operator answered widget queries autonomously — 100% grounded.",
+      "timestamp": "2026-10-02T06:18:20.608Z"
+    }
+  ],
+  "team": [
+    {
+      "id": "088ce74d-f9a5-4595-bd2f-b1f6d2ed3eec",
+      "name": "Marcus Vance",
+      "email": "marcus@apexconsulting.com",
+      "role": "Administrator",
+      "avatar": "MV",
+      "joinedAt": "2025-10-06T06:18:20.608Z"
+    },
+    {
+      "id": "25f3eb45-d907-41cb-8676-a9f3ce31d353",
+      "name": "Rachel Torres",
+      "email": "rachel@apexconsulting.com",
+      "role": "Manager",
+      "avatar": "RT",
+      "joinedAt": "2026-04-09T06:18:20.608Z"
+    },
+    {
+      "id": "adeb04aa-e8a6-45f4-a203-80ffc2aea302",
+      "name": "Daniel Park",
+      "email": "daniel@apexconsulting.com",
+      "role": "Viewer",
+      "avatar": "DP",
+      "joinedAt": "2026-07-08T06:18:20.608Z"
+    }
+  ],
+  "settings": {
+    "agentName": "OpsAgent",
+    "openingMessage": "Hi! I can help you qualify your next project and answer pricing or schedule questions.",
+    "accentColor": "#00d4c8",
+    "ownerName": "Marcus Vance",
+    "ownerEmail": "marcus@apexconsulting.com",
+    "notifyNewLead": true,
+    "notifyInvoicePaid": true,
+    "notifyAppointment": true
+  }
+}

@@ -753,6 +753,17 @@ function InvoicesPage() {
     load();
   };
 
+  const sendReminder = async (id: string) => {
+    try {
+      const res = await fetch(`/api/invoices/${id}/remind`, { method: 'POST' });
+      const data = await res.json();
+      setToast({ msg: data.message || 'Payment reminder dispatched!', type: 'success' });
+      load();
+    } catch {
+      setToast({ msg: 'Failed to send reminder', type: 'error' });
+    }
+  };
+
   const collected = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
   const outstanding = invoices.filter(i => i.status === 'sent' || i.status === 'draft').reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.amount, 0);
@@ -849,7 +860,10 @@ function InvoicesPage() {
                   </div>
                 </td>
                 <td>
-                  <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteInvoice(inv.id)}><Trash2 size={13} /></button>
+                  <div className="flex items-center gap-2">
+                    <button className="icon-btn" title="Send dunning reminder" style={{ width: 28, height: 28, color: 'var(--accent-amber)', borderColor: 'rgba(245,166,35,0.2)' }} onClick={() => sendReminder(inv.id)}><Mail size={13} /></button>
+                    <button className="icon-btn" title="Delete invoice" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteInvoice(inv.id)}><Trash2 size={13} /></button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -883,6 +897,22 @@ function AppointmentsPage() {
   const addAppt = async (data: Partial<Appointment>) => {
     await fetch('/api/appointments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     setToast({ msg: 'Appointment booked!', type: 'success' });
+    load();
+  };
+
+  const updateStatus = async (id: string, status: Appointment['status']) => {
+    await fetch(`/api/appointments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    setToast({ msg: `Appointment marked as ${status}`, type: 'success' });
+    load();
+  };
+
+  const deleteAppt = async (id: string) => {
+    await fetch(`/api/appointments/${id}`, { method: 'DELETE' });
+    setToast({ msg: 'Appointment removed', type: 'success' });
     load();
   };
 
@@ -944,6 +974,7 @@ function AppointmentsPage() {
                 <th>Time</th>
                 <th>Duration</th>
                 <th>Status</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -955,9 +986,20 @@ function AppointmentsPage() {
                   <td style={{ color: 'var(--text-secondary)' }}>{appt.time}</td>
                   <td style={{ color: 'var(--text-muted)' }}>{appt.duration}m</td>
                   <td>
-                    <span className={`badge ${appt.status === 'confirmed' ? 'badge-paid' : appt.status === 'pending' ? 'badge-warm' : 'badge-overdue'}`}>
-                      {appt.status}
-                    </span>
+                    <select
+                      className="status-select"
+                      value={appt.status}
+                      onChange={e => updateStatus(appt.id, e.target.value as Appointment['status'])}
+                      onClick={e => e.stopPropagation()}
+                      style={{ color: appt.status === 'confirmed' ? 'var(--accent-green)' : appt.status === 'pending' ? 'var(--accent-amber)' : 'var(--accent-red)' }}
+                    >
+                      <option value="confirmed">confirmed</option>
+                      <option value="pending">pending</option>
+                      <option value="cancelled">cancelled</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button className="icon-btn" title="Cancel/Delete appointment" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteAppt(appt.id)}><Trash2 size={13} /></button>
                   </td>
                 </tr>
               ))}
@@ -982,7 +1024,8 @@ function KnowledgePage() {
   const [newName, setNewName] = useState('');
   const [newContent, setNewContent] = useState('');
   const [testQ, setTestQ] = useState('');
-  const [testAnswer, setTestAnswer] = useState('');
+  const [groundingResult, setGroundingResult] = useState<{ answer: string; source: string; confidence: number; excerpt?: string } | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const load = async () => {
@@ -1006,14 +1049,21 @@ function KnowledgePage() {
     load();
   };
 
-  const testResponse = () => {
-    if (!testQ) return;
-    // Simulate grounded response
-    const found = sources.find(s => s.content.toLowerCase().includes(testQ.toLowerCase().split(' ').find(w => w.length > 4) || ''));
-    if (found) {
-      setTestAnswer(found.content.slice(0, 200) + (found.content.length > 200 ? '...' : ''));
-    } else {
-      setTestAnswer('Our standard discovery engagement starts at $8,500 and includes a 30-day implementation window.');
+  const testResponse = async () => {
+    if (!testQ.trim() || isTesting) return;
+    setIsTesting(true);
+    try {
+      const res = await fetch('/api/knowledge/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: testQ })
+      });
+      const data = await res.json();
+      setGroundingResult(data);
+    } catch {
+      setToast({ msg: 'Failed to evaluate grounding', type: 'error' });
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -1104,16 +1154,28 @@ function KnowledgePage() {
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
             Ask a question and verify which private sources your operator uses before it responds to a customer.
           </p>
-          <div className="code-block mb-3" style={{ display: testAnswer ? 'block' : 'none' }}>
-            <div style={{ color: 'var(--text-primary)', marginBottom: 8 }}>"{testAnswer}"</div>
-            <div style={{ color: 'var(--accent-green)', fontSize: 12 }}>✓ Grounded in {sources[0]?.name || 'knowledge base'}</div>
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>ⓘ Responses are grounded before they are sent.</div>
+          {groundingResult && (
+            <div className="code-block mb-3">
+              <div style={{ color: 'var(--text-primary)', marginBottom: 8, fontSize: 13, lineHeight: 1.6 }}>"{groundingResult.answer}"</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>✓ Grounded in {groundingResult.source}</span>
+                <span style={{ color: 'var(--accent-cyan)', background: 'var(--accent-cyan-dim)', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>{groundingResult.confidence}% match</span>
+              </div>
+              {groundingResult.excerpt && (
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, fontStyle: 'italic', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                  Source passage: "{groundingResult.excerpt}"
+                </div>
+              )}
+            </div>
+          )}
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>ⓘ Responses are validated against grounded documents before sending.</div>
           <div className="form-group">
             <label className="form-label">Test question</label>
             <input className="form-input" value={testQ} onChange={e => setTestQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && testResponse()} placeholder="e.g. What does discovery cost?" />
           </div>
-          <button className="btn btn-primary btn-sm" onClick={testResponse}><Search size={13} /> Test response</button>
+          <button className="btn btn-primary btn-sm" onClick={testResponse} disabled={isTesting}>
+            <Search size={13} /> {isTesting ? 'Verifying grounding…' : 'Test response'}
+          </button>
         </div>
       </div>
     </div>
@@ -1143,10 +1205,30 @@ function SmartWidgetPage() {
     setToast({ msg: 'Widget settings saved', type: 'success' });
   };
 
-  const sendMsg = () => {
-    if (!input.trim()) return;
-    setMessages(m => [...m, { role: 'user', text: input }, { role: 'bot', text: "Thanks for sharing that. Could you tell me more about your timeline and budget?" }]);
+  const [loading, setLoading] = useState(false);
+
+  const sendMsg = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
     setInput('');
+    setMessages(m => [...m, { role: 'user', text: userMsg }]);
+    setLoading(true);
+    try {
+      const res = await fetch('/api/widget/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg, history: messages })
+      });
+      const data = await res.json();
+      setMessages(m => [...m, { role: 'bot', text: data.reply }]);
+      if (data.leadCaptured) {
+        setToast({ msg: '✨ Inbound lead automatically captured & added to pipeline!', type: 'success' });
+      }
+    } catch {
+      setMessages(m => [...m, { role: 'bot', text: "Thanks for reaching out! Our team has been notified." }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -1194,10 +1276,18 @@ function SmartWidgetPage() {
                   </div>
                 </div>
               ))}
+              {loading && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                  <div className="chat-bubble bot" style={{ display: 'flex', alignItems: 'center', gap: 6, fontStyle: 'italic', color: 'var(--text-muted)' }}>
+                    <span style={{ width: 6, height: 6, background: 'var(--accent-cyan)', borderRadius: '50%' }} />
+                    {settings.agentName} is responding…
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{ padding: '0 12px 12px', display: 'flex', gap: 8 }}>
-              <input className="form-input" style={{ flex: 1 }} placeholder="Type a message…" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMsg()} />
-              <button className="btn btn-primary btn-sm" onClick={sendMsg} style={{ background: settings.accentColor }}>Send</button>
+              <input className="form-input" style={{ flex: 1 }} placeholder="Type a message (e.g. quote, pricing, email)…" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMsg()} disabled={loading} />
+              <button className="btn btn-primary btn-sm" onClick={sendMsg} disabled={loading} style={{ background: settings.accentColor }}>Send</button>
             </div>
           </div>
         </div>
@@ -1240,6 +1330,7 @@ function SmartWidgetPage() {
 // ─── Activity Log Page ────────────────────────────────────────────────────────
 function ActivityLogPage() {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetch('/api/activity').then(r => r.json()).then(d => setEvents(d.events));
@@ -1252,7 +1343,18 @@ function ActivityLogPage() {
     invoice_paid: <DollarSign size={14} color="var(--accent-green)" />,
     appointment_booked: <Calendar size={14} color="var(--accent-purple)" />,
     agent_response: <Cpu size={14} color="var(--text-muted)" />,
+    dunning_sent: <Mail size={14} color="var(--accent-amber)" />,
+    team_member_added: <Users size={14} color="var(--accent-blue)" />,
   };
+
+  const filtered = events.filter(ev => {
+    if (filter === 'all') return true;
+    if (filter === 'leads') return ev.type.startsWith('lead_');
+    if (filter === 'invoices') return ev.type.startsWith('invoice_') || ev.type === 'dunning_sent';
+    if (filter === 'appointments') return ev.type.startsWith('appointment_');
+    if (filter === 'agent') return ev.type === 'agent_response';
+    return true;
+  });
 
   return (
     <div className="page-content">
@@ -1263,12 +1365,27 @@ function ActivityLogPage() {
       </div>
 
       <div className="card card-p">
-        <div className="flex items-center gap-8 mb-4">
-          <Bell size={16} color="var(--accent-cyan)" />
-          <span style={{ fontWeight: 600 }}>Recent events</span>
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>{events.length} events</span>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-8">
+            <Bell size={16} color="var(--accent-cyan)" />
+            <span style={{ fontWeight: 600 }}>Recent events</span>
+          </div>
+          <div className="filter-tabs">
+            {[
+              { key: 'all', label: 'All' },
+              { key: 'leads', label: 'Leads' },
+              { key: 'invoices', label: 'Billing' },
+              { key: 'appointments', label: 'Calendar' },
+              { key: 'agent', label: 'AI Agent' },
+            ].map(t => (
+              <button key={t.key} className={`filter-tab ${filter === t.key ? 'active' : ''}`} onClick={() => setFilter(t.key)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{filtered.length} events</span>
         </div>
-        {events.length > 0 ? events.map(ev => (
+        {filtered.length > 0 ? filtered.map(ev => (
           <div key={ev.id} className="activity-item">
             <div className="activity-icon">{iconMap[ev.type] || <Activity size={14} color="var(--text-muted)" />}</div>
             <div className="activity-content">
@@ -1279,7 +1396,7 @@ function ActivityLogPage() {
           </div>
         )) : (
           <div className="empty-state">
-            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No activity yet. Events will appear here as your operator takes actions.</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No matching activity found for this filter.</div>
           </div>
         )}
       </div>
@@ -1292,18 +1409,54 @@ function SettingsPage() {
   const [tab, setTab] = useState('account');
   const [form, setForm] = useState({ ownerName: 'Marcus Vance', ownerEmail: 'marcus@apexconsulting.com', notifyNewLead: true, notifyInvoicePaid: true, notifyAppointment: true });
   const [team, setTeam] = useState<{ id: string; name: string; email: string; role: string; avatar: string }[]>([]);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [newMember, setNewMember] = useState({ name: '', email: '', role: 'Manager' });
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  useEffect(() => {
+  const loadSettings = () => {
     fetch('/api/settings').then(r => r.json()).then(d => {
       if (d.settings) setForm(f => ({ ...f, ownerName: d.settings.ownerName, ownerEmail: d.settings.ownerEmail, notifyNewLead: d.settings.notifyNewLead, notifyInvoicePaid: d.settings.notifyInvoicePaid, notifyAppointment: d.settings.notifyAppointment }));
       if (d.team) setTeam(d.team);
     });
+  };
+
+  useEffect(() => {
+    loadSettings();
   }, []);
 
   const save = async () => {
     await fetch('/api/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     setToast({ msg: 'Settings saved', type: 'success' });
+  };
+
+  const inviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMember.name || !newMember.email) return;
+    try {
+      const res = await fetch('/api/team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMember)
+      });
+      if (res.ok) {
+        setToast({ msg: `Invitation sent to ${newMember.email}`, type: 'success' });
+        setNewMember({ name: '', email: '', role: 'Manager' });
+        setShowInviteModal(false);
+        loadSettings();
+      }
+    } catch {
+      setToast({ msg: 'Failed to invite team member', type: 'error' });
+    }
+  };
+
+  const removeMember = async (id: string) => {
+    try {
+      await fetch(`/api/team/${id}`, { method: 'DELETE' });
+      setToast({ msg: 'Team member removed', type: 'success' });
+      loadSettings();
+    } catch {
+      setToast({ msg: 'Failed to remove team member', type: 'error' });
+    }
   };
 
   return (
@@ -1379,8 +1532,51 @@ function SettingsPage() {
 
           {tab === 'team' && (
             <div className="card card-p">
-              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Team access</div>
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>Manage who can access your workspace.</div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Team access</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Manage who can access your workspace.</div>
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowInviteModal(true)}>
+                  <Plus size={14} /> Invite member
+                </button>
+              </div>
+
+              {showInviteModal && (
+                <div className="modal-backdrop" onClick={() => setShowInviteModal(false)}>
+                  <div className="modal" onClick={e => e.stopPropagation()}>
+                    <div className="modal-header">
+                      <span className="modal-title">Invite team member</span>
+                      <button className="modal-close" onClick={() => setShowInviteModal(false)}><X size={18} /></button>
+                    </div>
+                    <form onSubmit={inviteMember}>
+                      <div className="modal-body">
+                        <div className="form-group">
+                          <label className="form-label">Full name *</label>
+                          <input className="form-input" required value={newMember.name} onChange={e => setNewMember(m => ({ ...m, name: e.target.value }))} placeholder="Elena Rostova" />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Email address *</label>
+                          <input className="form-input" type="email" required value={newMember.email} onChange={e => setNewMember(m => ({ ...m, email: e.target.value }))} placeholder="elena@apexconsulting.com" />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Role</label>
+                          <select className="form-select" value={newMember.role} onChange={e => setNewMember(m => ({ ...m, role: e.target.value as any }))}>
+                            <option value="Administrator">Administrator</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Viewer">Viewer</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowInviteModal(false)}>Cancel</button>
+                        <button type="submit" className="btn btn-primary btn-sm"><Plus size={14} /> Send invite</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
               {team.map(member => (
                 <div key={member.id} className="team-row">
                   <div className="user-avatar">{member.avatar}</div>
@@ -1389,6 +1585,11 @@ function SettingsPage() {
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{member.email}</div>
                   </div>
                   <span className="badge badge-draft">{member.role}</span>
+                  {member.role !== 'Administrator' && (
+                    <button className="icon-btn" title="Remove member" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)', marginLeft: 8 }} onClick={() => removeMember(member.id)}>
+                      <Trash2 size={12} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -1450,6 +1651,18 @@ export default function AppPage() {
   const [theme, setTheme] = useState<Theme>('dark');
   const [showCommand, setShowCommand] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
+  const [counts, setCounts] = useState<{ leads: number; pendingInvoices: number }>({ leads: 14, pendingInvoices: 3 });
+
+  useEffect(() => {
+    fetch('/api/overview')
+      .then(r => r.json())
+      .then(d => {
+        if (d.totalLeads !== undefined && d.pendingInvoices !== undefined) {
+          setCounts({ leads: d.totalLeads, pendingInvoices: d.pendingInvoices });
+        }
+      })
+      .catch(() => {});
+  }, [page]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -1466,8 +1679,8 @@ export default function AppPage() {
 
   const navItems = [
     { id: 'overview' as Page, label: 'Overview', icon: <LayoutDashboard size={15} />, section: 'workspace' },
-    { id: 'leads' as Page, label: 'Leads pipeline', icon: <KanbanSquare size={15} />, badge: '14', section: 'workspace' },
-    { id: 'invoices' as Page, label: 'Invoices', icon: <FileText size={15} />, badge: '3', section: 'workspace' },
+    { id: 'leads' as Page, label: 'Leads pipeline', icon: <KanbanSquare size={15} />, badge: String(counts.leads), section: 'workspace' },
+    { id: 'invoices' as Page, label: 'Invoices', icon: <FileText size={15} />, badge: String(counts.pendingInvoices), section: 'workspace' },
     { id: 'appointments' as Page, label: 'Appointments', icon: <Calendar size={15} />, section: 'workspace' },
     { id: 'knowledge' as Page, label: 'Knowledge base', icon: <BookOpen size={15} />, section: 'tools' },
     { id: 'widget' as Page, label: 'Smart widget', icon: <Cpu size={15} />, section: 'tools' },
