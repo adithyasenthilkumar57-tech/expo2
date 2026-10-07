@@ -7,7 +7,7 @@ import {
   Search, HelpCircle, SlidersHorizontal, List, Grid3X3,
   Plus, Mail, Trash2, Edit, Check, MoreHorizontal, Upload,
   AlertTriangle, Clock, DollarSign, TrendingUp, Users, RefreshCw,
-  ArrowUpRight, Palette, Shield, ExternalLink
+  ArrowUpRight, Palette, Shield, ExternalLink, Menu
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -85,6 +85,7 @@ function CommandPalette({ onClose, onNavigate }: { onClose: () => void; onNaviga
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="command-palette" onClick={e => e.stopPropagation()}>
+        <div className="sheet-handle" />
         <div className="command-input-wrap">
           <Search size={16} color="var(--text-muted)" />
           <input className="command-input" placeholder="Search workspace…" autoFocus value={q} onChange={e => setQ(e.target.value)} />
@@ -112,6 +113,7 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void; onAdd: (lead: P
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="sheet-handle" />
         <div className="modal-header">
           <span className="modal-title">Add lead</span>
           <button className="modal-close" onClick={onClose}><X size={18} /></button>
@@ -186,6 +188,7 @@ function AddInvoiceModal({ onClose, onAdd }: { onClose: () => void; onAdd: (inv:
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="sheet-handle" />
         <div className="modal-header">
           <span className="modal-title">Create invoice</span>
           <button className="modal-close" onClick={onClose}><X size={18} /></button>
@@ -233,6 +236,7 @@ function BookSlotModal({ onClose, onAdd }: { onClose: () => void; onAdd: (a: Par
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="sheet-handle" />
         <div className="modal-header">
           <span className="modal-title">Book a slot</span>
           <button className="modal-close" onClick={onClose}><X size={18} /></button>
@@ -289,6 +293,7 @@ function LeadDrawer({ lead, onClose, onSave, onDelete }: { lead: Lead; onClose: 
     <>
       <div className="drawer-backdrop" onClick={onClose} />
       <div className="drawer">
+        <div className="sheet-handle" />
         <div className="drawer-header">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -579,6 +584,12 @@ function LeadsPage() {
       {showAdd && <AddLeadModal onClose={() => setShowAdd(false)} onAdd={addLead} />}
       {selected && <LeadDrawer lead={selected} onClose={() => setSelected(null)} onSave={saveLead} onDelete={deleteLead} />}
 
+      {/* Floating Action Button on Mobile */}
+      <button className="fab" onClick={() => setShowAdd(true)} aria-label="Add lead">
+        <Plus size={18} />
+        <span>Add lead</span>
+      </button>
+
       <div className="page-header page-header-row">
         <div>
           <div className="page-label">Autonomous qualification</div>
@@ -588,7 +599,7 @@ function LeadsPage() {
         <button className="btn btn-primary" onClick={() => setShowAdd(true)}><Plus size={15} /> Add lead</button>
       </div>
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+      <div className="stats-grid mb-6">
         {[
           { label: 'Total leads', value: String(leads.length).padStart(2, '0') },
           { label: 'Hot intent', value: String(hot).padStart(2, '0') },
@@ -598,14 +609,14 @@ function LeadsPage() {
           <div key={s.label} className="stat-card">
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="stat-value" style={{ fontSize: 32 }}>{s.value}</div>
+              <div className="stat-value" style={{ fontSize: 30 }}>{s.value}</div>
             </div>
           </div>
         ))}
       </div>
 
       <div className="card">
-        <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div className="flex items-center justify-between flex-wrap gap-3" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-3">
             <div className="filter-tabs">
               {[
@@ -623,7 +634,7 @@ function LeadsPage() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
             <div className="search-input-wrap">
               <Search size={14} className="search-input-icon" />
               <input className="search-input" placeholder="Search leads" value={q} onChange={e => setQ(e.target.value)} />
@@ -636,52 +647,95 @@ function LeadsPage() {
         </div>
 
         {viewMode === 'list' ? (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Lead</th>
-                <th>Intent</th>
-                <th>Potential value</th>
-                <th>Source</th>
-                <th>Last touch</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop Table View */}
+            <div className="desktop-table-view table-responsive-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Lead</th>
+                    <th>Intent</th>
+                    <th>Potential value</th>
+                    <th>Source</th>
+                    <th>Last touch</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allLeads.map(lead => (
+                    <tr key={lead.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(lead)}>
+                      <td>
+                        <div className="flex items-center gap-10">
+                          <div className="user-avatar" style={{ flexShrink: 0 }}>{lead.name[0]}</div>
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{lead.name}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{lead.company}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-8">
+                          <span className={`badge badge-${lead.status}`}>{lead.status}</span>
+                          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{lead.score}/100</span>
+                        </div>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>${lead.value.toLocaleString()}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{lead.source}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>
+                        {new Date(lead.lastTouch).toLocaleDateString() === new Date().toLocaleDateString()
+                          ? `Today, ${fmtTime(lead.lastTouch)}`
+                          : timeAgo(lead.lastTouch)}
+                      </td>
+                      <td>
+                        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+                          <button className="icon-btn" style={{ width: 28, height: 28 }} title="Send email" onClick={() => window.open(`mailto:${lead.email}`)}><Mail size={13} /></button>
+                          <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} title="Delete" onClick={() => deleteLead(lead.id)}><Trash2 size={13} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="mobile-card-list">
               {allLeads.map(lead => (
-                <tr key={lead.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(lead)}>
-                  <td>
-                    <div className="flex items-center gap-10">
-                      <div className="user-avatar" style={{ flexShrink: 0 }}>{lead.name[0]}</div>
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{lead.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{lead.company}</div>
+                <div key={lead.id} className="mobile-card" onClick={() => setSelected(lead)}>
+                  <div className="mobile-card-header">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="user-avatar" style={{ width: 34, height: 34, fontSize: 13, flexShrink: 0 }}>{lead.name[0]}</div>
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-sm">{lead.name}</div>
+                        <div className="truncate text-xs text-secondary">{lead.company}</div>
                       </div>
                     </div>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-8">
-                      <span className={`badge badge-${lead.status}`}>{lead.status}</span>
-                      <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{lead.score}/100</span>
+                    <span className={`badge badge-${lead.status}`} style={{ flexShrink: 0 }}>{lead.status}</span>
+                  </div>
+                  <div className="mobile-card-body">
+                    <div>
+                      <div className="text-xs text-muted">Potential value</div>
+                      <div className="font-bold text-sm text-accent" style={{ color: 'var(--accent-cyan)' }}>${lead.value.toLocaleString()}</div>
                     </div>
-                  </td>
-                  <td style={{ fontWeight: 600 }}>${lead.value.toLocaleString()}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{lead.source}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>
-                    {new Date(lead.lastTouch).toLocaleDateString() === new Date().toLocaleDateString()
-                      ? `Today, ${fmtTime(lead.lastTouch)}`
-                      : timeAgo(lead.lastTouch)}
-                  </td>
-                  <td>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="text-xs text-muted">Intent score</div>
+                      <div className="font-semibold text-xs">{lead.score}/100</div>
+                    </div>
+                  </div>
+                  <div className="score-bar" style={{ marginTop: 0 }}>
+                    <div className="score-fill" style={{ width: `${lead.score}%` }} />
+                  </div>
+                  <div className="mobile-card-footer">
+                    <span>{lead.source} · {timeAgo(lead.lastTouch)}</span>
                     <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                      <button className="icon-btn" style={{ width: 28, height: 28 }} title="Send email" onClick={() => window.open(`mailto:${lead.email}`)}><Mail size={13} /></button>
-                      <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} title="Delete" onClick={() => deleteLead(lead.id)}><Trash2 size={13} /></button>
+                      <button className="icon-btn" style={{ width: 28, height: 28 }} title="Send email" onClick={() => window.open(`mailto:${lead.email}`)}><Mail size={12} /></button>
+                      <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} title="Delete" onClick={() => deleteLead(lead.id)}><Trash2 size={12} /></button>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         ) : (
           <div className="leads-grid" style={{ padding: 20 }}>
             {allLeads.map(lead => (
@@ -775,6 +829,12 @@ function InvoicesPage() {
       {toast && <Toast msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
       {showAdd && <AddInvoiceModal onClose={() => setShowAdd(false)} onAdd={addInvoice} />}
 
+      {/* Floating Action Button on Mobile */}
+      <button className="fab" onClick={() => setShowAdd(true)} aria-label="Create invoice">
+        <Plus size={18} />
+        <span>Invoice</span>
+      </button>
+
       <div className="page-header page-header-row">
         <div>
           <div className="page-label">Financial SLA</div>
@@ -794,7 +854,7 @@ function InvoicesPage() {
           <div key={s.label} className="stat-card">
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="stat-value" style={{ fontSize: 26 }}>{s.value}</div>
+              <div className="stat-value" style={{ fontSize: 24 }}>{s.value}</div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{s.sub}</div>
             </div>
             <div className="stat-icon" style={{ background: s.iconBg }}>{s.icon}</div>
@@ -803,7 +863,7 @@ function InvoicesPage() {
       </div>
 
       <div className="card">
-        <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div className="flex items-center justify-between flex-wrap gap-2" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div>
             <div className="section-label">Receivables ledger</div>
             <div className="section-title">Recent invoices</div>
@@ -819,56 +879,105 @@ function InvoicesPage() {
             </label>
           </div>
         </div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Invoice</th>
-              <th>Client</th>
-              <th>Amount</th>
-              <th>Due date</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoices.map(inv => (
-              <tr key={inv.id}>
-                <td>
-                  <div className="flex items-center gap-8">
-                    <FileText size={14} color="var(--text-muted)" />
-                    <span style={{ fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{inv.invoiceNumber}</span>
-                  </div>
-                </td>
-                <td style={{ color: 'var(--accent-cyan)', fontWeight: 500 }}>{inv.client}</td>
-                <td style={{ fontWeight: 700 }}>${inv.amount.toLocaleString()}</td>
-                <td style={{ color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{inv.dueDate}</td>
-                <td>
-                  <div className="flex items-center gap-8">
-                    {inv.status === 'sent' && <span className="badge badge-sent">↗ SENT</span>}
-                    <select
-                      className="status-select"
-                      value={inv.status}
-                      onChange={e => updateStatus(inv.id, e.target.value as Invoice['status'])}
-                      onClick={e => e.stopPropagation()}
-                      style={{ color: inv.status === 'paid' ? 'var(--accent-green)' : inv.status === 'overdue' ? 'var(--accent-red)' : inv.status === 'draft' ? 'var(--text-muted)' : 'var(--accent-cyan)' }}
-                    >
-                      <option value="draft">draft</option>
-                      <option value="sent">sent</option>
-                      <option value="paid">paid</option>
-                      <option value="overdue">overdue</option>
-                    </select>
-                  </div>
-                </td>
-                <td>
-                  <div className="flex items-center gap-2">
-                    <button className="icon-btn" title="Send dunning reminder" style={{ width: 28, height: 28, color: 'var(--accent-amber)', borderColor: 'rgba(245,166,35,0.2)' }} onClick={() => sendReminder(inv.id)}><Mail size={13} /></button>
-                    <button className="icon-btn" title="Delete invoice" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteInvoice(inv.id)}><Trash2 size={13} /></button>
-                  </div>
-                </td>
+
+        {/* Desktop Table View */}
+        <div className="desktop-table-view table-responsive-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Invoice</th>
+                <th>Client</th>
+                <th>Amount</th>
+                <th>Due date</th>
+                <th>Status</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {invoices.map(inv => (
+                <tr key={inv.id}>
+                  <td>
+                    <div className="flex items-center gap-8">
+                      <FileText size={14} color="var(--text-muted)" />
+                      <span style={{ fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{inv.invoiceNumber}</span>
+                    </div>
+                  </td>
+                  <td style={{ color: 'var(--accent-cyan)', fontWeight: 500 }}>{inv.client}</td>
+                  <td style={{ fontWeight: 700 }}>${inv.amount.toLocaleString()}</td>
+                  <td style={{ color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{inv.dueDate}</td>
+                  <td>
+                    <div className="flex items-center gap-8">
+                      {inv.status === 'sent' && <span className="badge badge-sent">↗ SENT</span>}
+                      <select
+                        className="status-select"
+                        value={inv.status}
+                        onChange={e => updateStatus(inv.id, e.target.value as Invoice['status'])}
+                        onClick={e => e.stopPropagation()}
+                        style={{ color: inv.status === 'paid' ? 'var(--accent-green)' : inv.status === 'overdue' ? 'var(--accent-red)' : inv.status === 'draft' ? 'var(--text-muted)' : 'var(--accent-cyan)' }}
+                      >
+                        <option value="draft">draft</option>
+                        <option value="sent">sent</option>
+                        <option value="paid">paid</option>
+                        <option value="overdue">overdue</option>
+                      </select>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <button className="icon-btn" title="Send dunning reminder" style={{ width: 28, height: 28, color: 'var(--accent-amber)', borderColor: 'rgba(245,166,35,0.2)' }} onClick={() => sendReminder(inv.id)}><Mail size={13} /></button>
+                      <button className="icon-btn" title="Delete invoice" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteInvoice(inv.id)}><Trash2 size={13} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Invoice Cards */}
+        <div className="mobile-card-list">
+          {invoices.map(inv => (
+            <div key={inv.id} className="mobile-card">
+              <div className="mobile-card-header">
+                <div className="flex items-center gap-2">
+                  <FileText size={15} color="var(--accent-cyan)" />
+                  <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>{inv.invoiceNumber}</span>
+                </div>
+                <span className={`badge badge-${inv.status}`}>{inv.status.toUpperCase()}</span>
+              </div>
+              <div className="mobile-card-body">
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{inv.client}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Due {inv.dueDate}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>${inv.amount.toLocaleString()}</div>
+                </div>
+              </div>
+              <div className="mobile-card-footer">
+                <div className="flex items-center gap-2">
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Status:</span>
+                  <select
+                    className="status-select"
+                    value={inv.status}
+                    onChange={e => updateStatus(inv.id, e.target.value as Invoice['status'])}
+                    style={{ color: inv.status === 'paid' ? 'var(--accent-green)' : inv.status === 'overdue' ? 'var(--accent-red)' : inv.status === 'draft' ? 'var(--text-muted)' : 'var(--accent-cyan)' }}
+                  >
+                    <option value="draft">draft</option>
+                    <option value="sent">sent</option>
+                    <option value="paid">paid</option>
+                    <option value="overdue">overdue</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="icon-btn" title="Send reminder" style={{ width: 30, height: 30, color: 'var(--accent-amber)', borderColor: 'rgba(245,166,35,0.2)' }} onClick={() => sendReminder(inv.id)}><Mail size={13} /></button>
+                  <button className="icon-btn" title="Delete invoice" style={{ width: 30, height: 30, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteInvoice(inv.id)}><Trash2 size={13} /></button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {invoices.length === 0 && (
           <div className="empty-state">
             <div className="empty-state-icon"><FileText size={40} color="var(--text-muted)" /></div>
@@ -924,6 +1033,12 @@ function AppointmentsPage() {
       {toast && <Toast msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
       {showAdd && <BookSlotModal onClose={() => setShowAdd(false)} onAdd={addAppt} />}
 
+      {/* Floating Action Button on Mobile */}
+      <button className="fab" onClick={() => setShowAdd(true)} aria-label="Book slot">
+        <Plus size={18} />
+        <span>Book slot</span>
+      </button>
+
       <div className="page-header page-header-row">
         <div>
           <div className="page-label">Zero no-show operations</div>
@@ -933,7 +1048,7 @@ function AppointmentsPage() {
         <button className="btn btn-primary" onClick={() => setShowAdd(true)}><Plus size={15} /> Book slot</button>
       </div>
 
-      <div className="stats-grid mb-6" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+      <div className="stats-grid mb-6">
         {[
           { label: 'Upcoming', value: String(upcoming.length).padStart(2, '0'), icon: <Calendar size={20} color="var(--accent-cyan)" />, iconBg: 'rgba(0,212,200,0.1)' },
           { label: 'Confirmed', value: String(confirmed).padStart(2, '0'), icon: <Check size={20} color="var(--accent-green)" />, iconBg: 'rgba(0,196,140,0.1)' },
@@ -942,7 +1057,7 @@ function AppointmentsPage() {
           <div key={s.label} className="stat-card">
             <div>
               <div className="stat-label">{s.label}</div>
-              <div className="stat-value" style={{ fontSize: 32 }}>{s.value}</div>
+              <div className="stat-value" style={{ fontSize: 30 }}>{s.value}</div>
             </div>
             <div className="stat-icon" style={{ background: s.iconBg }}>{s.icon}</div>
           </div>
@@ -965,46 +1080,93 @@ function AppointmentsPage() {
       {/* Appointments List */}
       {appointments.length > 0 ? (
         <div className="card">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Client</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {appointments.map(appt => (
-                <tr key={appt.id}>
-                  <td style={{ fontWeight: 600 }}>{appt.title}</td>
-                  <td>{appt.client}</td>
-                  <td style={{ color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{fmtDate(appt.date)}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{appt.time}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{appt.duration}m</td>
-                  <td>
+          {/* Desktop Table View */}
+          <div className="desktop-table-view table-responsive-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Client</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map(appt => (
+                  <tr key={appt.id}>
+                    <td style={{ fontWeight: 600 }}>{appt.title}</td>
+                    <td>{appt.client}</td>
+                    <td style={{ color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{fmtDate(appt.date)}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{appt.time}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{appt.duration}m</td>
+                    <td>
+                      <select
+                        className="status-select"
+                        value={appt.status}
+                        onChange={e => updateStatus(appt.id, e.target.value as Appointment['status'])}
+                        onClick={e => e.stopPropagation()}
+                        style={{ color: appt.status === 'confirmed' ? 'var(--accent-green)' : appt.status === 'pending' ? 'var(--accent-amber)' : 'var(--accent-red)' }}
+                      >
+                        <option value="confirmed">confirmed</option>
+                        <option value="pending">pending</option>
+                        <option value="cancelled">cancelled</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button className="icon-btn" title="Cancel/Delete appointment" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteAppt(appt.id)}><Trash2 size={13} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Appointments Cards */}
+          <div className="mobile-card-list">
+            {appointments.map(appt => (
+              <div key={appt.id} className="mobile-card">
+                <div className="mobile-card-header">
+                  <div className="flex items-center gap-2">
+                    <div className="calendar-month-badge" style={{ width: 36, height: 36, fontSize: 9 }}>
+                      {new Date(appt.date).toLocaleString('en-US', { month: 'short' }).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13 }}>{appt.title}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{appt.client}</div>
+                    </div>
+                  </div>
+                  <span className={`badge badge-${appt.status === 'confirmed' ? 'paid' : appt.status === 'pending' ? 'warm' : 'hot'}`}>
+                    {appt.status}
+                  </span>
+                </div>
+                <div className="mobile-card-body">
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Clock size={13} color="var(--accent-cyan)" />
+                    <span>{fmtDate(appt.date)} · {appt.time} ({appt.duration}m)</span>
+                  </div>
+                </div>
+                <div className="mobile-card-footer">
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Status:</span>
                     <select
                       className="status-select"
                       value={appt.status}
                       onChange={e => updateStatus(appt.id, e.target.value as Appointment['status'])}
-                      onClick={e => e.stopPropagation()}
                       style={{ color: appt.status === 'confirmed' ? 'var(--accent-green)' : appt.status === 'pending' ? 'var(--accent-amber)' : 'var(--accent-red)' }}
                     >
                       <option value="confirmed">confirmed</option>
                       <option value="pending">pending</option>
                       <option value="cancelled">cancelled</option>
                     </select>
-                  </td>
-                  <td>
-                    <button className="icon-btn" title="Cancel/Delete appointment" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteAppt(appt.id)}><Trash2 size={13} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  <button className="icon-btn" title="Cancel/Delete" style={{ width: 28, height: 28, color: 'var(--accent-red)', borderColor: 'rgba(255,91,91,0.2)' }} onClick={() => deleteAppt(appt.id)}><Trash2 size={13} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="card" style={{ padding: 60, textAlign: 'center' }}>
@@ -1077,8 +1239,8 @@ function KnowledgePage() {
           <h1 className="page-title">Knowledge base</h1>
           <p className="page-description">Ground every autonomous answer in your actual offers, FAQs, and operating rules.</p>
         </div>
-        <div className="flex gap-2">
-          <input className="search-input" style={{ width: 220 }} placeholder="Add FAQ source…" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key === 'Enter' && setShowAdd(true)} />
+        <div className="flex gap-2 flex-wrap" style={{ maxWidth: 380, width: '100%' }}>
+          <input className="search-input" style={{ flex: 1, minWidth: 150 }} placeholder="Add FAQ source…" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key === 'Enter' && setShowAdd(true)} />
           <button className="btn btn-primary" onClick={() => setShowAdd(true)}><Plus size={15} /> Add source</button>
         </div>
       </div>
@@ -1086,6 +1248,7 @@ function KnowledgePage() {
       {showAdd && (
         <div className="modal-backdrop" onClick={() => setShowAdd(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle" />
             <div className="modal-header">
               <span className="modal-title">Add knowledge source</span>
               <button className="modal-close" onClick={() => setShowAdd(false)}><X size={18} /></button>
@@ -1469,9 +1632,23 @@ function SettingsPage() {
         <p className="page-description">Tune your workspace, operator behavior, and team access from one place.</p>
       </div>
 
+      {/* Mobile Horizontal Tabs */}
+      <div className="settings-tabs-mobile">
+        {[
+          { key: 'account', label: 'Account', icon: <Users size={14} /> },
+          { key: 'team', label: 'Team access', icon: <Users size={14} /> },
+          { key: 'notifications', label: 'Notifications', icon: <Bell size={14} /> },
+          { key: 'security', label: 'Security', icon: <Shield size={14} /> },
+        ].map(t => (
+          <button key={t.key} className={`settings-tab-mobile-btn ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid-2" style={{ alignItems: 'flex-start' }}>
-        {/* Settings Nav */}
-        <div style={{ gridColumn: '1', maxWidth: 220 }}>
+        {/* Settings Nav (Desktop) */}
+        <div className="desktop-settings-nav" style={{ maxWidth: 220 }}>
           <div className="card card-p">
             <div className="settings-tabs">
               {[
@@ -1489,7 +1666,7 @@ function SettingsPage() {
         </div>
 
         {/* Settings Content */}
-        <div style={{ gridColumn: '2' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           {tab === 'account' && (
             <div className="card card-p">
               <div className="flex items-center gap-10 mb-5">
@@ -1532,7 +1709,7 @@ function SettingsPage() {
 
           {tab === 'team' && (
             <div className="card card-p">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Team access</div>
                   <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Manage who can access your workspace.</div>
@@ -1545,6 +1722,7 @@ function SettingsPage() {
               {showInviteModal && (
                 <div className="modal-backdrop" onClick={() => setShowInviteModal(false)}>
                   <div className="modal" onClick={e => e.stopPropagation()}>
+                    <div className="sheet-handle" />
                     <div className="modal-header">
                       <span className="modal-title">Invite team member</span>
                       <button className="modal-close" onClick={() => setShowInviteModal(false)}><X size={18} /></button>
@@ -1651,6 +1829,7 @@ export default function AppPage() {
   const [theme, setTheme] = useState<Theme>('dark');
   const [showCommand, setShowCommand] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [counts, setCounts] = useState<{ leads: number; pendingInvoices: number }>({ leads: 14, pendingInvoices: 3 });
 
   useEffect(() => {
@@ -1671,7 +1850,7 @@ export default function AppPage() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setShowCommand(p => !p); }
-      if (e.key === 'Escape') { setShowCommand(false); setShowNotif(false); }
+      if (e.key === 'Escape') { setShowCommand(false); setShowNotif(false); setMobileMenuOpen(false); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -1696,16 +1875,21 @@ export default function AppPage() {
 
   return (
     <div className="app-layout">
-      {showCommand && <CommandPalette onClose={() => setShowCommand(false)} onNavigate={setPage} />}
+      {showCommand && <CommandPalette onClose={() => setShowCommand(false)} onNavigate={(p) => { setPage(p); setMobileMenuOpen(false); }} />}
 
-      {/* Sidebar */}
-      <aside className="sidebar">
+      {/* Mobile Drawer Backdrop */}
+      <div className={`sidebar-backdrop ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen(false)} />
+
+      {/* Sidebar / Mobile Drawer */}
+      <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         {/* Logo */}
         <div className="sidebar-logo">
           <div className="logo-icon"><Zap size={20} color="white" /></div>
           <span className="logo-text">OPS</span>
           <span className="logo-badge">3.0</span>
-          <button className="sidebar-close" style={{ marginLeft: 'auto' }}><X size={16} /></button>
+          <button className="sidebar-close" style={{ marginLeft: 'auto' }} onClick={() => setMobileMenuOpen(false)} title="Close menu">
+            <X size={18} />
+          </button>
         </div>
 
         {/* Workspace Switcher */}
@@ -1724,7 +1908,7 @@ export default function AppPage() {
             <div key={section}>
               <div className="nav-section-label">{section}</div>
               {navItems.filter(n => n.section === section).map(item => (
-                <a key={item.id} className={`nav-item ${page === item.id ? 'active' : ''}`} onClick={() => setPage(item.id)} href="#">
+                <a key={item.id} className={`nav-item ${page === item.id ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setPage(item.id); setMobileMenuOpen(false); }} href="#">
                   {item.icon}
                   <span>{item.label}</span>
                   {item.badge && <span className="nav-badge">{item.badge}</span>}
@@ -1744,7 +1928,7 @@ export default function AppPage() {
             </div>
             <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}><HelpCircle size={14} /></button>
           </div>
-          <div className="user-profile">
+          <div className="user-profile" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>
             <div className="user-avatar">MV</div>
             <div className="user-info">
               <div className="user-name">Marcus Vance</div>
@@ -1759,7 +1943,9 @@ export default function AppPage() {
       <main className="main-content">
         {/* Header */}
         <header className="header">
-          <button className="header-menu-btn"><MoreHorizontal size={18} /></button>
+          <button className="header-menu-btn" onClick={() => setMobileMenuOpen(true)} title="Open navigation">
+            <Menu size={20} />
+          </button>
           <div className="header-title-group">
             <div className="header-subtitle">Autonomous operations platform</div>
             <div className="header-title">{pageTitles[page]}</div>
@@ -1770,8 +1956,11 @@ export default function AppPage() {
               <span className="search-bar-text">Search workspace</span>
               <span className="search-kbd">⌘ K</span>
             </button>
+            <button className="icon-btn search-btn-mobile" onClick={() => setShowCommand(true)} title="Search workspace">
+              <Search size={16} />
+            </button>
             <div style={{ position: 'relative' }}>
-              <button className="icon-btn" onClick={() => setShowNotif(p => !p)}>
+              <button className="icon-btn" onClick={() => setShowNotif(p => !p)} title="Notifications">
                 <Bell size={16} />
                 <span className="notification-dot" />
               </button>
@@ -1787,16 +1976,15 @@ export default function AppPage() {
                 </div>
               )}
             </div>
-            <button className="icon-btn" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}>
+            <button className="icon-btn" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} title="Toggle theme">
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <button className="user-btn">MV</button>
-            <ChevronDown size={14} color="var(--text-muted)" />
+            <button className="user-btn" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>MV</button>
           </div>
         </header>
 
         {/* Page */}
-        {page === 'overview' && <OverviewPage onNavigate={setPage} />}
+        {page === 'overview' && <OverviewPage onNavigate={(p) => { setPage(p); setMobileMenuOpen(false); }} />}
         {page === 'leads' && <LeadsPage />}
         {page === 'invoices' && <InvoicesPage />}
         {page === 'appointments' && <AppointmentsPage />}
@@ -1804,6 +1992,37 @@ export default function AppPage() {
         {page === 'widget' && <SmartWidgetPage />}
         {page === 'activity' && <ActivityLogPage />}
         {page === 'settings' && <SettingsPage />}
+
+        {/* Mobile Bottom Navigation Bar */}
+        <nav className="mobile-bottom-nav">
+          <button className={`mobile-nav-btn ${page === 'overview' ? 'active' : ''}`} onClick={() => setPage('overview')}>
+            <LayoutDashboard size={19} />
+            <span className="mobile-nav-label">Overview</span>
+            {page === 'overview' && <span className="mobile-nav-active-pill" />}
+          </button>
+          <button className={`mobile-nav-btn ${page === 'leads' ? 'active' : ''}`} onClick={() => setPage('leads')}>
+            <KanbanSquare size={19} />
+            <span className="mobile-nav-label">Leads</span>
+            {counts.leads > 0 && <span className="mobile-nav-badge">{counts.leads}</span>}
+            {page === 'leads' && <span className="mobile-nav-active-pill" />}
+          </button>
+          <button className={`mobile-nav-btn ${page === 'invoices' ? 'active' : ''}`} onClick={() => setPage('invoices')}>
+            <FileText size={19} />
+            <span className="mobile-nav-label">Invoices</span>
+            {counts.pendingInvoices > 0 && <span className="mobile-nav-badge">{counts.pendingInvoices}</span>}
+            {page === 'invoices' && <span className="mobile-nav-active-pill" />}
+          </button>
+          <button className={`mobile-nav-btn ${page === 'appointments' ? 'active' : ''}`} onClick={() => setPage('appointments')}>
+            <Calendar size={19} />
+            <span className="mobile-nav-label">Bookings</span>
+            {page === 'appointments' && <span className="mobile-nav-active-pill" />}
+          </button>
+          <button className={`mobile-nav-btn ${['knowledge', 'widget', 'activity', 'settings'].includes(page) ? 'active' : ''}`} onClick={() => setMobileMenuOpen(true)}>
+            <Menu size={19} />
+            <span className="mobile-nav-label">More</span>
+            {['knowledge', 'widget', 'activity', 'settings'].includes(page) && <span className="mobile-nav-active-pill" />}
+          </button>
+        </nav>
       </main>
     </div>
   );
