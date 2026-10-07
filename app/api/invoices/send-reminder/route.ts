@@ -120,7 +120,8 @@ export async function POST(req: Request) {
 </html>`;
 
     const { data, error } = await resend.emails.send({
-      from: 'OpsAgent <onboarding@resend.dev>',
+      from: 'Cresconix <onboarding@resend.dev>',
+      replyTo: 'cresconix@gmail.com',
       to: [invoice.email],
       subject,
       html,

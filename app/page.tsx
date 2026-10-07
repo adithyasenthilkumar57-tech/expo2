@@ -1,6 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
+
 export default function Home() {
-  // redirect to main app
-  if (typeof window !== 'undefined') window.location.href = '/app';
-  return null;
+  redirect('/app');
 }

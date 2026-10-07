@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import OpenAI from 'openai';
+
+const ai = new OpenAI({
+  apiKey: process.env.FEATHERLESS_API_KEY || '',
+  baseURL: process.env.FEATHERLESS_BASE_URL || 'https://api.featherless.ai/v1',
+});
+
+const MODEL = process.env.FEATHERLESS_MODEL || 'meta-llama/Llama-3.3-70B-Instruct';
 
 export async function POST(req: Request) {
   try {
@@ -11,12 +19,24 @@ export async function POST(req: Request) {
     // Load synced knowledge sources from the real DB
     const sources = await prisma.knowledgeSource.findMany({ where: { synced: true } });
 
+    if (sources.length === 0) {
+      return NextResponse.json({
+        question,
+        answer: 'No knowledge documents have been added to your database yet. Upload or paste a service document to enable grounded answering.',
+        source: 'Empty Knowledge Base',
+        sourceType: 'text',
+        confidence: 0,
+        grounded: false,
+        excerpt: 'No documents indexed in PostgreSQL.',
+      });
+    }
+
+    // Find the most relevant source based on content overlap
     const qLower = question.toLowerCase();
-    const tokens = qLower.split(/[\s,?.!]+/).filter(w => w.length > 3);
+    const tokens = qLower.split(/[\s,?.!]+/).filter((w) => w.length > 3);
 
     let bestSource = sources[0];
     let maxMatch = 0;
-    let relevantExcerpt = '';
 
     for (const src of sources) {
       const contentLower = src.content.toLowerCase();
@@ -31,54 +51,54 @@ export async function POST(req: Request) {
     }
 
     let answer = '';
-    let confidence = 94;
+    let confidence = 85;
 
-    if (qLower.includes('cost') || qLower.includes('pricing') || qLower.includes('price') || qLower.includes('discovery')) {
-      answer = 'Our standard discovery engagement starts at $8,500 and includes a 30-day implementation window. Enterprise plans start at $15,000/month with dedicated support.';
-      confidence = 99;
-      relevantExcerpt = 'Our standard discovery engagement starts at $8,500 and includes a 30-day implementation window.';
-    } else if (qLower.includes('sla') || qLower.includes('response time') || qLower.includes('speed')) {
-      answer = 'Our autonomous operations platform maintains an average response SLA of under 90 seconds (currently averaging 1m 24s across all channels).';
-      confidence = 98;
-      relevantExcerpt = 'Our SLA guarantees an average response time of under 90 seconds.';
-    } else if (qLower.includes('integration') || qLower.includes('hubspot') || qLower.includes('salesforce') || qLower.includes('stripe')) {
-      answer = 'We support 50+ integrations including HubSpot, Salesforce, Stripe, QuickBooks, Google Calendar, and Slack.';
-      confidence = 97;
-      relevantExcerpt = 'We support 50+ integrations including HubSpot, Salesforce, Stripe, QuickBooks, Google Calendar, and Slack.';
-    } else if (qLower.includes('dunning') || qLower.includes('invoice') || qLower.includes('payment')) {
-      answer = 'Automated dunning sequences trigger 3 days prior to invoice due date and follow up automatically at 1, 5, and 14 days overdue.';
-      confidence = 96;
-      relevantExcerpt = 'Automated dunning sequences trigger 3 days prior to invoice due date and follow up at 1, 5, and 14 days overdue.';
-    } else if (bestSource) {
-      // Find sentence with greatest match
-      const sentences = bestSource.content.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
-      const scoredSentence = sentences.find(s => tokens.some(t => s.toLowerCase().includes(t))) || sentences[0];
-      answer = scoredSentence ? `${scoredSentence}.` : bestSource.content.slice(0, 200);
-      relevantExcerpt = answer;
-      confidence = Math.min(95, 75 + maxMatch * 7);
-    } else {
-      answer = 'Our operations agent is configured with your organization operating parameters, pricing matrices, and automation rules.';
-      confidence = 90;
-      relevantExcerpt = 'Standard workspace operations guide.';
+    // Call Featherless AI to generate a grounded response
+    try {
+      const context = sources.map((s) => `[Document: ${s.name}]\n${s.content}`).join('\n\n---\n\n');
+      const response = await ai.chat.completions.create({
+        model: MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an operations knowledge inspector. Answer the user's question accurately using ONLY the provided knowledge base. If the answer cannot be found in the knowledge base, state clearly that it is not covered in the uploaded documents.\n\nKNOWLEDGE BASE:\n${context}`,
+          },
+          { role: 'user', content: question },
+        ],
+        max_tokens: 250,
+        temperature: 0.3,
+      });
+
+      answer = response.choices[0]?.message?.content?.trim() || '';
+      confidence = maxMatch > 0 ? Math.min(98, 80 + maxMatch * 5) : 75;
+    } catch (aiErr) {
+      console.warn('AI evaluation error, falling back to document excerpt:', aiErr);
+      const sentences = bestSource.content.split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
+      const matched = sentences.find((s) => tokens.some((t) => s.toLowerCase().includes(t))) || sentences[0];
+      answer = matched ? `${matched}.` : bestSource.content.slice(0, 200);
+      confidence = 70;
     }
 
-    // Log the grounding query
+    // Extract excerpt
+    const excerpt = bestSource.content.slice(0, 200) + '...';
+
+    // Log the grounding query in activity
     await prisma.activityEvent.create({
       data: {
         type: 'agent_response',
         title: 'Grounding query evaluated',
-        description: `Grounding inspector verified response for: "${question.slice(0, 50)}..." (${confidence}% confidence)`,
+        description: `Grounding verified response for: "${question.slice(0, 50)}" (${confidence}% confidence)`,
       },
     });
 
     return NextResponse.json({
       question,
       answer,
-      source: bestSource ? bestSource.name : 'Operating guidelines',
-      sourceType: bestSource ? bestSource.type : 'text',
+      source: bestSource.name,
+      sourceType: bestSource.type,
       confidence,
       grounded: true,
-      excerpt: relevantExcerpt,
+      excerpt,
     });
   } catch (err) {
     console.error('Error answering question:', err);

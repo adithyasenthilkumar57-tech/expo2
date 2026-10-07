@@ -7,7 +7,7 @@ import {
   Search, HelpCircle, SlidersHorizontal, List, Grid3X3,
   Plus, Mail, Trash2, Edit, Check, MoreHorizontal, Upload,
   AlertTriangle, Clock, DollarSign, TrendingUp, Users, RefreshCw,
-  ArrowUpRight, Palette, Shield, ExternalLink, Menu
+  ArrowUpRight, Palette, Shield, ExternalLink, Menu, LogOut
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -181,13 +181,53 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void; onAdd: (lead: P
 }
 
 // ─── Add Invoice Modal ────────────────────────────────────────────────────────
-function AddInvoiceModal({ onClose, onAdd }: { onClose: () => void; onAdd: (inv: Partial<Invoice>) => void }) {
-  const [form, setForm] = useState({ client: '', email: '', dueDate: '', description: '', amount: '' });
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const submit = (e: React.FormEvent) => { e.preventDefault(); onAdd({ ...form, amount: parseFloat(form.amount) || 0 }); onClose(); };
+function AddInvoiceModal({ onClose, onAdd }: { onClose: () => void; onAdd: (inv: any) => void }) {
+  const today = new Date().toISOString().split('T')[0];
+  const [client, setClient] = useState('');
+  const [email, setEmail] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [items, setItems] = useState<{ description: string; quantity: number; unitPrice: number }[]>([
+    { description: 'Operations Strategy & Consulting', quantity: 1, unitPrice: 2500 }
+  ]);
+  const [error, setError] = useState('');
+
+  const updateItem = (index: number, field: string, val: any) => {
+    setItems(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: val };
+      return next;
+    });
+  };
+
+  const addItem = () => {
+    setItems(prev => [...prev, { description: '', quantity: 1, unitPrice: 0 }]);
+  };
+
+  const removeItem = (idx: number) => {
+    if (items.length > 1) {
+      setItems(prev => prev.filter((_, i) => i !== idx));
+    }
+  };
+
+  const subtotal = items.reduce((sum, it) => sum + (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0), 0);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (dueDate && dueDate < today) {
+      setError('Due date cannot be earlier than today.');
+      return;
+    }
+    if (subtotal <= 0) {
+      setError('Please add at least one line item with a positive price.');
+      return;
+    }
+    onAdd({ client, email, dueDate, amount: subtotal, items, description: items[0]?.description || 'Services' });
+    onClose();
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+      <div className="modal" style={{ maxWidth: 620 }} onClick={e => e.stopPropagation()}>
         <div className="sheet-handle" />
         <div className="modal-header">
           <span className="modal-title">Create invoice</span>
@@ -195,27 +235,76 @@ function AddInvoiceModal({ onClose, onAdd }: { onClose: () => void; onAdd: (inv:
         </div>
         <form onSubmit={submit}>
           <div className="modal-body">
-            <div className="form-group">
-              <label className="form-label">Client name *</label>
-              <input className="form-input" required value={form.client} onChange={e => set('client', e.target.value)} placeholder="TechCorp" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Billing email *</label>
-              <input className="form-input" type="email" required value={form.email} onChange={e => set('email', e.target.value)} placeholder="billing@techcorp.com" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <input className="form-input" value={form.description} onChange={e => set('description', e.target.value)} placeholder="Discovery Engagement" />
-            </div>
+            {error && <div className="form-error mb-3" style={{ color: 'var(--accent-red)', fontSize: 13, background: 'rgba(239,68,68,0.1)', padding: '8px 12px', borderRadius: 8 }}>{error}</div>}
             <div className="grid-2">
               <div className="form-group">
-                <label className="form-label">Amount ($) *</label>
-                <input className="form-input" type="number" required value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="8500" />
+                <label className="form-label">Client name *</label>
+                <input className="form-input" required value={client} onChange={e => setClient(e.target.value)} placeholder="Acme Inc" />
               </div>
               <div className="form-group">
-                <label className="form-label">Due date *</label>
-                <input className="form-input" type="date" required value={form.dueDate} onChange={e => set('dueDate', e.target.value)} />
+                <label className="form-label">Billing email *</label>
+                <input className="form-input" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="billing@acme.com" />
               </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Due date *</label>
+              <input className="form-input" type="date" min={today} required value={dueDate} onChange={e => { setError(''); setDueDate(e.target.value); }} />
+            </div>
+
+            <div className="form-group mb-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="form-label mb-0">Line Items</label>
+                <button type="button" className="btn btn-secondary btn-sm" style={{ height: 26, fontSize: 11, padding: '0 8px' }} onClick={addItem}>
+                  <Plus size={12} /> Add row
+                </button>
+              </div>
+
+              {items.map((it, idx) => (
+                <div key={idx} className="flex items-center gap-2 mb-2" style={{ background: 'rgba(255,255,255,0.02)', padding: 6, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                  <input
+                    className="form-input"
+                    style={{ flex: 3 }}
+                    required
+                    placeholder="Item description"
+                    value={it.description}
+                    onChange={e => updateItem(idx, 'description', e.target.value)}
+                  />
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="1"
+                    style={{ width: 65, textAlign: 'center' }}
+                    required
+                    value={it.quantity}
+                    onChange={e => updateItem(idx, 'quantity', parseInt(e.target.value, 10) || 1)}
+                  />
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    style={{ width: 95 }}
+                    required
+                    placeholder="Price"
+                    value={it.unitPrice}
+                    onChange={e => updateItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                  />
+                  <span style={{ width: 75, fontSize: 12, fontWeight: 600, textAlign: 'right', color: 'var(--text-secondary)' }}>
+                    ${((it.quantity || 1) * (it.unitPrice || 0)).toLocaleString()}
+                  </span>
+                  {items.length > 1 && (
+                    <button type="button" className="icon-btn" style={{ width: 26, height: 26, color: 'var(--accent-red)' }} onClick={() => removeItem(idx)}>
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between mt-3 p-3" style={{ background: 'rgba(0,212,200,0.06)', borderRadius: 10, border: '1px solid rgba(0,212,200,0.2)' }}>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Total Amount Due</span>
+              <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-cyan)' }}>${subtotal.toLocaleString()}</span>
             </div>
           </div>
           <div className="modal-footer">
@@ -230,9 +319,19 @@ function AddInvoiceModal({ onClose, onAdd }: { onClose: () => void; onAdd: (inv:
 
 // ─── Book Slot Modal ──────────────────────────────────────────────────────────
 function BookSlotModal({ onClose, onAdd }: { onClose: () => void; onAdd: (a: Partial<Appointment>) => void }) {
-  const [form, setForm] = useState({ title: '', client: '', date: '', time: '10:00', duration: '60', notes: '' });
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const submit = (e: React.FormEvent) => { e.preventDefault(); onAdd({ ...form, duration: parseInt(form.duration, 10) || 60 }); onClose(); };
+  const today = new Date().toISOString().split('T')[0];
+  const [form, setForm] = useState({ title: '', client: '', date: today, time: '10:00', duration: '60', notes: '' });
+  const [error, setError] = useState('');
+  const set = (k: string, v: string) => { setError(''); setForm(f => ({ ...f, [k]: v })); };
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.date < today) {
+      setError('Cannot book appointments in the past.');
+      return;
+    }
+    onAdd({ ...form, duration: parseInt(form.duration, 10) || 60 });
+    onClose();
+  };
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -243,18 +342,19 @@ function BookSlotModal({ onClose, onAdd }: { onClose: () => void; onAdd: (a: Par
         </div>
         <form onSubmit={submit}>
           <div className="modal-body">
+            {error && <div className="form-error mb-3" style={{ color: 'var(--accent-red)', fontSize: 13, background: 'rgba(239,68,68,0.1)', padding: '8px 12px', borderRadius: 8 }}>{error}</div>}
             <div className="form-group">
               <label className="form-label">Appointment title *</label>
               <input className="form-input" required value={form.title} onChange={e => set('title', e.target.value)} placeholder="Discovery Call" />
             </div>
             <div className="form-group">
               <label className="form-label">Client name *</label>
-              <input className="form-input" required value={form.client} onChange={e => set('client', e.target.value)} placeholder="Sarah Mitchell" />
+              <input className="form-input" required value={form.client} onChange={e => set('client', e.target.value)} placeholder="Client Name" />
             </div>
             <div className="grid-2">
               <div className="form-group">
                 <label className="form-label">Date *</label>
-                <input className="form-input" type="date" required value={form.date} onChange={e => set('date', e.target.value)} />
+                <input className="form-input" type="date" min={today} required value={form.date} onChange={e => set('date', e.target.value)} />
               </div>
               <div className="form-group">
                 <label className="form-label">Time *</label>
@@ -284,6 +384,7 @@ function BookSlotModal({ onClose, onAdd }: { onClose: () => void; onAdd: (a: Par
     </div>
   );
 }
+
 
 // ─── Lead Drawer ──────────────────────────────────────────────────────────────
 function LeadDrawer({ lead, onClose, onSave, onDelete }: { lead: Lead; onClose: () => void; onSave: (id: string, data: Partial<Lead>) => void; onDelete: (id: string) => void }) {
@@ -1836,6 +1937,14 @@ export default function AppPage() {
   const [notifications, setNotifications] = useState<ActivityEvent[]>([]);
   const [ownerName, setOwnerName] = useState('Marcus Vance');
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } finally {
+      window.location.href = '/login';
+    }
+  };
+
   useEffect(() => {
     fetch('/api/overview')
       .then(r => r.json())
@@ -1996,6 +2105,9 @@ export default function AppPage() {
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <button className="user-btn" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>{ownerName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}</button>
+            <button className="icon-btn" onClick={handleLogout} title="Sign out" style={{ color: 'var(--text-muted)' }}>
+              <LogOut size={16} />
+            </button>
           </div>
         </header>
 

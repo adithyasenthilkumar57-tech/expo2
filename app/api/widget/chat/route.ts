@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const systemPrompt = `You are ${agentName}, an intelligent operations assistant for a professional business services company. You help website visitors with questions about services, pricing, and scheduling.
 
 KNOWLEDGE BASE (use ONLY this information to answer questions):
-${knowledgeContext || 'Standard discovery engagement starts at $8,500. Enterprise plans from $15,000/month. Implementations take 2-4 weeks.'}
+${knowledgeContext || 'No specific services or pricing documents have been published yet. Ask the visitor for their email address and project requirements so our leadership team can provide a tailored quote.'}
 
 INSTRUCTIONS:
 - Answer concisely and professionally (2-4 sentences max)

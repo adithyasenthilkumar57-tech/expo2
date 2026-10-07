@@ -96,7 +96,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // Send email via Resend
   const { error: sendError } = await resend.emails.send({
-    from: 'OpsAgent <onboarding@resend.dev>',
+    from: 'Cresconix <onboarding@resend.dev>',
+    replyTo: 'cresconix@gmail.com',
     to: [invoice.email],
     subject,
     html,

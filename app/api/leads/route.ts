@@ -57,6 +57,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name, company, and email are required' }, { status: 400 });
     }
 
+    const val = Number(body.value) || 0;
+    const computedScore = body.score !== undefined
+      ? Number(body.score)
+      : (() => {
+          let s = 50;
+          if (val >= 10000) s += 25;
+          else if (val >= 5000) s += 15;
+          const domain = (body.email || '').split('@')[1]?.toLowerCase();
+          const generic = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
+          if (domain && !generic.includes(domain)) s += 15;
+          if (body.phone && body.phone.trim().length > 5) s += 10;
+          if (body.source === 'Referral' || body.source === 'Website widget') s += 5;
+          return Math.min(99, s);
+        })();
+
     const lead = await prisma.lead.create({
       data: {
         name: body.name.trim(),
@@ -64,8 +79,8 @@ export async function POST(req: Request) {
         email: body.email.trim(),
         phone: body.phone?.trim() || null,
         status: body.status || 'warm',
-        score: body.score !== undefined ? Number(body.score) : Math.floor(Math.random() * 35) + 60,
-        value: Number(body.value) || 0,
+        score: computedScore,
+        value: val,
         source: body.source || 'Website widget',
         notes: body.notes || '',
       },
