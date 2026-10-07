@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const db = readDB();
-  const idx = db.team.findIndex(m => m.id === id);
-  if (idx === -1) return NextResponse.json({ error: 'Team member not found' }, { status: 404 });
+  try {
+    const { id } = await params;
+    const deleted = await prisma.teamMember.delete({
+      where: { id },
+    });
 
-  const deleted = db.team.splice(idx, 1)[0];
-  writeDB(db);
-  return NextResponse.json({ success: true, deletedMember: deleted });
+    await prisma.activityEvent.create({
+      data: {
+        type: 'team_member_removed',
+        title: 'Team member removed',
+        description: `${deleted.name} (${deleted.email}) was removed from the workspace.`,
+      },
+    });
+
+    return NextResponse.json({ success: true, deletedMember: deleted });
+  } catch (err) {
+    console.error('Error deleting team member:', err);
+    return NextResponse.json({ error: 'Team member not found or deletion failed' }, { status: 404 });
+  }
 }
