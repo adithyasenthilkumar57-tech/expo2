@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readDB, addActivity } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
@@ -8,8 +8,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
-    const db = readDB();
-    const sources = db.knowledge || [];
+    // Load synced knowledge sources from the real DB
+    const sources = await prisma.knowledgeSource.findMany({ where: { synced: true } });
 
     const qLower = question.toLowerCase();
     const tokens = qLower.split(/[\s,?.!]+/).filter(w => w.length > 3);
@@ -62,11 +62,14 @@ export async function POST(req: Request) {
       relevantExcerpt = 'Standard workspace operations guide.';
     }
 
-    addActivity(
-      'agent_response',
-      'Grounding query evaluated',
-      `Grounding inspector verified response for: "${question.slice(0, 50)}..." (${confidence}% confidence)`
-    );
+    // Log the grounding query
+    await prisma.activityEvent.create({
+      data: {
+        type: 'agent_response',
+        title: 'Grounding query evaluated',
+        description: `Grounding inspector verified response for: "${question.slice(0, 50)}..." (${confidence}% confidence)`,
+      },
+    });
 
     return NextResponse.json({
       question,

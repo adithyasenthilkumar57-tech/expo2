@@ -1,34 +1,36 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB, addActivity, Appointment } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
   const q = searchParams.get('q')?.toLowerCase();
 
-  const db = readDB();
-  let appointments = [...db.appointments];
+  const where: Record<string, unknown> = {};
 
   if (status && status !== 'all') {
-    appointments = appointments.filter(a => a.status === status);
+    where.status = status;
   }
 
   if (q) {
-    appointments = appointments.filter(a => 
-      a.title.toLowerCase().includes(q) ||
-      a.client.toLowerCase().includes(q)
-    );
+    where.OR = [
+      { title: { contains: q, mode: 'insensitive' } },
+      { client: { contains: q, mode: 'insensitive' } },
+    ];
   }
 
-  // Sort chronologically
-  appointments.sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
+  const appointments = await prisma.appointment.findMany({
+    where,
+    orderBy: [{ date: 'asc' }, { time: 'asc' }],
+  });
+
+  const today = new Date().toISOString().split('T')[0];
 
   return NextResponse.json({
     appointments,
     total: appointments.length,
-    upcoming: appointments.filter(a => new Date(a.date) >= new Date()).length,
-    confirmed: appointments.filter(a => a.status === 'confirmed').length,
+    upcoming: appointments.filter((a) => a.date >= today).length,
+    confirmed: appointments.filter((a) => a.status === 'confirmed').length,
   });
 }
 
@@ -39,27 +41,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Title, client, and date are required' }, { status: 400 });
     }
 
-    const db = readDB();
-    const appt: Appointment = {
-      id: uuidv4(),
-      title: body.title.trim(),
-      client: body.client.trim(),
-      date: body.date,
-      time: body.time || '10:00',
-      duration: Number(body.duration) || 60,
-      status: body.status || 'confirmed',
-      notes: body.notes || '',
-      createdAt: new Date().toISOString(),
-    };
+    const appt = await prisma.appointment.create({
+      data: {
+        title: body.title.trim(),
+        client: body.client.trim(),
+        date: body.date,
+        time: body.time || '10:00',
+        duration: Number(body.duration) || 60,
+        status: body.status || 'confirmed',
+        notes: body.notes || '',
+      },
+    });
 
-    db.appointments.unshift(appt);
-    writeDB(db);
-
-    addActivity(
-      'appointment_booked',
-      'Appointment booked',
-      `${appt.title} with ${appt.client} confirmed for ${appt.date} at ${appt.time}.`
-    );
+    await prisma.activityEvent.create({
+      data: {
+        type: 'appointment_booked',
+        title: 'Appointment booked',
+        description: `${appt.title} with ${appt.client} confirmed for ${appt.date} at ${appt.time}.`,
+      },
+    });
 
     return NextResponse.json(appt, { status: 201 });
   } catch (err) {

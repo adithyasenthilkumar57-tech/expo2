@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB, addActivity, TeamMember } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  const db = readDB();
-  return NextResponse.json({ team: db.team || [] });
+  const team = await prisma.teamMember.findMany({ orderBy: { joinedAt: 'asc' } });
+  return NextResponse.json({ team });
 }
 
 export async function POST(req: Request) {
@@ -14,25 +13,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
     }
 
-    const db = readDB();
-    const initials = body.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'TM';
-    const member: TeamMember = {
-      id: uuidv4(),
-      name: body.name.trim(),
-      email: body.email.trim(),
-      role: body.role || 'Viewer',
-      avatar: initials,
-      joinedAt: new Date().toISOString(),
-    };
+    const initials = body.name
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'TM';
 
-    db.team.push(member);
-    writeDB(db);
+    const member = await prisma.teamMember.create({
+      data: {
+        name: body.name.trim(),
+        email: body.email.trim(),
+        role: body.role || 'Viewer',
+        avatar: initials,
+      },
+    });
 
-    addActivity(
-      'team_member_added',
-      'Team member invited',
-      `${member.name} (${member.email}) was invited as ${member.role}.`
-    );
+    await prisma.activityEvent.create({
+      data: {
+        type: 'team_member_added',
+        title: 'Team member invited',
+        description: `${member.name} (${member.email}) was invited as ${member.role}.`,
+      },
+    });
 
     return NextResponse.json(member, { status: 201 });
   } catch (err) {

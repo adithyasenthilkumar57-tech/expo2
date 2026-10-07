@@ -1,35 +1,40 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB, addActivity, Invoice } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
   const q = searchParams.get('q')?.toLowerCase();
 
-  const db = readDB();
-  let invoices = [...db.invoices];
+  const where: Record<string, unknown> = {};
 
   if (status && status !== 'all') {
-    invoices = invoices.filter(i => i.status === status);
+    where.status = status;
   }
 
   if (q) {
-    invoices = invoices.filter(i => 
-      i.invoiceNumber.toLowerCase().includes(q) ||
-      i.client.toLowerCase().includes(q) ||
-      i.email.toLowerCase().includes(q)
-    );
+    where.OR = [
+      { invoiceNumber: { contains: q, mode: 'insensitive' } },
+      { client: { contains: q, mode: 'insensitive' } },
+      { email: { contains: q, mode: 'insensitive' } },
+    ];
   }
 
-  const collected = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + (Number(i.amount) || 0), 0);
-  const outstanding = invoices.filter(i => i.status === 'sent' || i.status === 'draft').reduce((s, i) => s + (Number(i.amount) || 0), 0);
-  const overdue = invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + (Number(i.amount) || 0), 0);
+  const invoices = await prisma.invoice.findMany({
+    where,
+    include: { items: true },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const all = await prisma.invoice.findMany({ select: { status: true, amount: true } });
+  const collected = all.filter((i) => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+  const outstanding = all.filter((i) => i.status === 'sent' || i.status === 'draft').reduce((s, i) => s + i.amount, 0);
+  const overdue = all.filter((i) => i.status === 'overdue').reduce((s, i) => s + i.amount, 0);
 
   return NextResponse.json({
     invoices,
     summary: {
-      total: invoices.length,
+      total: all.length,
       collected,
       outstanding,
       overdue,
@@ -44,37 +49,46 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Client name, email, and due date are required' }, { status: 400 });
     }
 
-    const db = readDB();
     const currentYear = new Date().getFullYear();
-    const invoiceCount = db.invoices.length + 1;
-    const invoiceNumber = `INV-${currentYear}-${String(invoiceCount).padStart(3, '0')}`;
+    const invoiceCount = await prisma.invoice.count();
+    const invoiceNumber = `INV-${currentYear}-${String(invoiceCount + 1).padStart(3, '0')}`;
 
-    const items = body.items && body.items.length > 0 
-      ? body.items 
-      : [{ description: body.description || 'Professional Operations Services', quantity: 1, unitPrice: Number(body.amount) || 0 }];
+    const items =
+      body.items && body.items.length > 0
+        ? body.items
+        : [{ description: body.description || 'Professional Operations Services', quantity: 1, unitPrice: Number(body.amount) || 0 }];
 
-    const totalAmount = items.reduce((s: number, it: { quantity: number; unitPrice: number }) => s + (it.quantity * it.unitPrice), 0) || Number(body.amount) || 0;
+    const totalAmount =
+      items.reduce((s: number, it: { quantity: number; unitPrice: number }) => s + it.quantity * it.unitPrice, 0) ||
+      Number(body.amount) ||
+      0;
 
-    const invoice: Invoice = {
-      id: uuidv4(),
-      invoiceNumber,
-      client: body.client.trim(),
-      email: body.email.trim(),
-      amount: totalAmount,
-      dueDate: body.dueDate,
-      status: body.status || 'draft',
-      items,
-      createdAt: new Date().toISOString(),
-    };
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber,
+        client: body.client.trim(),
+        email: body.email.trim(),
+        amount: totalAmount,
+        dueDate: body.dueDate,
+        status: body.status || 'draft',
+        items: {
+          create: items.map((it: { description: string; quantity: number; unitPrice: number }) => ({
+            description: it.description,
+            quantity: it.quantity,
+            unitPrice: it.unitPrice,
+          })),
+        },
+      },
+      include: { items: true },
+    });
 
-    db.invoices.unshift(invoice);
-    writeDB(db);
-
-    addActivity(
-      'invoice_sent',
-      'Invoice created',
-      `${invoice.invoiceNumber} created for ${invoice.client} — $${invoice.amount.toLocaleString()}`
-    );
+    await prisma.activityEvent.create({
+      data: {
+        type: 'invoice_sent',
+        title: 'Invoice created',
+        description: `${invoice.invoiceNumber} created for ${invoice.client} — $${invoice.amount.toLocaleString()}`,
+      },
+    });
 
     return NextResponse.json(invoice, { status: 201 });
   } catch (err) {

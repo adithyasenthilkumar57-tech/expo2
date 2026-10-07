@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB, KnowledgeSource } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  const db = readDB();
-  return NextResponse.json({ sources: db.knowledge || [] });
+  const sources = await prisma.knowledgeSource.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
+  return NextResponse.json({ sources });
 }
 
 export async function POST(req: Request) {
@@ -14,18 +15,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name and content are required' }, { status: 400 });
     }
 
-    const db = readDB();
-    const source: KnowledgeSource = {
-      id: uuidv4(),
-      name: body.name.trim(),
-      type: body.type || 'text',
-      content: body.content.trim(),
-      synced: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    db.knowledge.push(source);
-    writeDB(db);
+    const source = await prisma.knowledgeSource.create({
+      data: {
+        name: body.name.trim(),
+        type: body.type || 'text',
+        content: body.content.trim(),
+        synced: true,
+      },
+    });
 
     return NextResponse.json(source, { status: 201 });
   } catch (err) {
@@ -39,11 +36,9 @@ export async function DELETE(req: Request) {
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing source ID' }, { status: 400 });
 
-  const db = readDB();
-  const idx = db.knowledge.findIndex(k => k.id === id);
-  if (idx === -1) return NextResponse.json({ error: 'Source not found' }, { status: 404 });
+  const existing = await prisma.knowledgeSource.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: 'Source not found' }, { status: 404 });
 
-  const deleted = db.knowledge.splice(idx, 1)[0];
-  writeDB(db);
-  return NextResponse.json({ success: true, deletedSource: deleted });
+  await prisma.knowledgeSource.delete({ where: { id } });
+  return NextResponse.json({ success: true, deletedSource: existing });
 }

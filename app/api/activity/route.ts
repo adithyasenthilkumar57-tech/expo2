@@ -1,22 +1,26 @@
 import { NextResponse } from 'next/server';
-import { readDB, addActivity } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get('type');
   const limit = Number(searchParams.get('limit')) || 100;
 
-  const db = readDB();
-  let events = [...db.activity];
-
+  const where: Record<string, unknown> = {};
   if (type && type !== 'all') {
-    events = events.filter(e => e.type === type);
+    where.type = type;
   }
 
-  return NextResponse.json({
-    events: events.slice(0, limit),
-    total: events.length,
-  });
+  const [events, total] = await Promise.all([
+    prisma.activityEvent.findMany({
+      where,
+      orderBy: { timestamp: 'desc' },
+      take: limit,
+    }),
+    prisma.activityEvent.count({ where }),
+  ]);
+
+  return NextResponse.json({ events, total });
 }
 
 export async function POST(req: Request) {
@@ -26,12 +30,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Title and description are required' }, { status: 400 });
     }
 
-    const event = addActivity(
-      body.type || 'agent_response',
-      body.title,
-      body.description,
-      body.metadata
-    );
+    const event = await prisma.activityEvent.create({
+      data: {
+        type: body.type || 'agent_response',
+        title: body.title,
+        description: body.description,
+        metadata: body.metadata || undefined,
+      },
+    });
 
     return NextResponse.json(event, { status: 201 });
   } catch (err) {

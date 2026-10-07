@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB, addActivity, Lead } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -8,37 +7,46 @@ export async function GET(req: Request) {
   const q = searchParams.get('q')?.toLowerCase();
   const sort = searchParams.get('sort') || 'recent';
 
-  const db = readDB();
-  let leads = [...db.leads];
+  const where: Record<string, unknown> = {};
 
   if (status && status !== 'all') {
-    leads = leads.filter(l => l.status === status);
+    where.status = status;
   }
 
   if (q) {
-    leads = leads.filter(l => 
-      l.name.toLowerCase().includes(q) || 
-      l.company.toLowerCase().includes(q) ||
-      l.email.toLowerCase().includes(q) ||
-      (l.notes && l.notes.toLowerCase().includes(q))
-    );
+    where.OR = [
+      { name: { contains: q, mode: 'insensitive' } },
+      { company: { contains: q, mode: 'insensitive' } },
+      { email: { contains: q, mode: 'insensitive' } },
+      { notes: { contains: q, mode: 'insensitive' } },
+    ];
   }
 
-  if (sort === 'score') {
-    leads.sort((a, b) => b.score - a.score);
-  } else if (sort === 'value') {
-    leads.sort((a, b) => b.value - a.value);
-  } else {
-    leads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
+  const orderBy =
+    sort === 'score'
+      ? { score: 'desc' as const }
+      : sort === 'value'
+      ? { value: 'desc' as const }
+      : { createdAt: 'desc' as const };
+
+  const [leads, counts] = await Promise.all([
+    prisma.lead.findMany({ where, orderBy }),
+    prisma.lead.groupBy({
+      by: ['status'],
+      _count: { status: true },
+    }),
+  ]);
+
+  const total = await prisma.lead.count();
+  const countMap = Object.fromEntries(counts.map((c) => [c.status, c._count.status]));
 
   return NextResponse.json({
     leads,
-    total: db.leads.length,
-    hot: db.leads.filter(l => l.status === 'hot').length,
-    warm: db.leads.filter(l => l.status === 'warm').length,
-    cold: db.leads.filter(l => l.status === 'cold').length,
-    escalated: db.leads.filter(l => l.status === 'escalated').length,
+    total,
+    hot: countMap.hot || 0,
+    warm: countMap.warm || 0,
+    cold: countMap.cold || 0,
+    escalated: countMap.escalated || 0,
   });
 }
 
@@ -49,37 +57,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name, company, and email are required' }, { status: 400 });
     }
 
-    const db = readDB();
-    const lead: Lead = {
-      id: uuidv4(),
-      name: body.name.trim(),
-      company: body.company.trim(),
-      email: body.email.trim(),
-      phone: body.phone?.trim() || '',
-      status: body.status || 'warm',
-      score: body.score !== undefined ? Number(body.score) : Math.floor(Math.random() * 35) + 60,
-      value: Number(body.value) || 0,
-      source: body.source || 'Website widget',
-      notes: body.notes || '',
-      createdAt: new Date().toISOString(),
-      lastTouch: new Date().toISOString(),
-    };
+    const lead = await prisma.lead.create({
+      data: {
+        name: body.name.trim(),
+        company: body.company.trim(),
+        email: body.email.trim(),
+        phone: body.phone?.trim() || null,
+        status: body.status || 'warm',
+        score: body.score !== undefined ? Number(body.score) : Math.floor(Math.random() * 35) + 60,
+        value: Number(body.value) || 0,
+        source: body.source || 'Website widget',
+        notes: body.notes || '',
+      },
+    });
 
-    db.leads.unshift(lead);
-    writeDB(db);
-
-    addActivity(
-      'lead_captured',
-      'New lead captured',
-      `${lead.name} from ${lead.company} entered the pipeline.`
-    );
+    await prisma.activityEvent.create({
+      data: {
+        type: 'lead_captured',
+        title: 'New lead captured',
+        description: `${lead.name} from ${lead.company} entered the pipeline.`,
+      },
+    });
 
     if (lead.status === 'hot') {
-      addActivity(
-        'lead_qualified',
-        'Lead qualified as hot',
-        `${lead.name} · ${lead.company} · $${lead.value.toLocaleString()} value`
-      );
+      await prisma.activityEvent.create({
+        data: {
+          type: 'lead_qualified',
+          title: 'Lead qualified as hot',
+          description: `${lead.name} · ${lead.company} · $${lead.value.toLocaleString()} value`,
+        },
+      });
     }
 
     return NextResponse.json(lead, { status: 201 });

@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("Administrator")
+  avatar    String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  name      String
+  company   String
+  email     String
+  phone     String?
+  status    String   @default("warm") // hot | warm | cold | escalated
+  score     Int      @default(50)
+  value     Float    @default(0)
+  source    String   @default("Website widget")
+  notes     String?  @default("")
+  createdAt DateTime @default(now())
+  lastTouch DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique
+  client           String
+  email            String
+  amount           Float
+  dueDate          String
+  status           String        @default("draft") // draft | sent | paid | overdue
+  items            InvoiceItem[]
+  lastReminderSent DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  description String
+  quantity    Int
+  unitPrice   Float
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId   String
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  title     String
+  client    String
+  date      String
+  time      String
+  duration  Int      @default(60) // minutes
+  status    String   @default("pending") // confirmed | pending | cancelled
+  notes     String?  @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model KnowledgeSource {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   @default("text") // pdf | url | text
+  content   String   @db.Text
+  synced    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ActivityEvent {
+  id          String   @id @default(cuid())
+  type        String   // lead_captured | lead_qualified | invoice_sent | invoice_paid | appointment_booked | agent_response | dunning_sent | team_member_added
+  title       String
+  description String
+  metadata    Json?
+  timestamp   DateTime @default(now())
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  name     String
+  email    String   @unique
+  role     String   @default("Viewer") // Administrator | Manager | Viewer
+  avatar   String   @default("")
+  joinedAt DateTime @default(now())
+}
+
+model Settings {
+  id                  String  @id @default("singleton")
+  agentName           String  @default("OpsAgent")
+  openingMessage      String  @default("Hi! I can help you qualify your next project and answer pricing or schedule questions.")
+  accentColor         String  @default("#00d4c8")
+  ownerName           String  @default("Admin")
+  ownerEmail          String  @default("admin@ops3.com")
+  notifyNewLead       Boolean @default(true)
+  notifyInvoicePaid   Boolean @default(true)
+  notifyAppointment   Boolean @default(true)
+}

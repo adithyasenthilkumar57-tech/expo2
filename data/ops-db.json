@@ -1,6 +1,20 @@
 {
   "leads": [
     {
+      "id": "3bb0a2de-ec7d-4983-b655-d1382b5ad926",
+      "name": "rgrgrg",
+      "company": "efdfgfg",
+      "email": "hfhsabfmfsbmnfshhj@gmail.com",
+      "phone": "9876543219",
+      "status": "warm",
+      "score": 82,
+      "value": 1000033,
+      "source": "Cold outreach",
+      "notes": "sgnjdsgnskjgnjgjgdsjjjjj\n",
+      "createdAt": "2026-10-07T06:40:31.485Z",
+      "lastTouch": "2026-10-07T06:40:31.485Z"
+    },
+    {
       "id": "29801528-c344-4a64-bf6a-09eeb18c17eb",
       "name": "Hi, can",
       "company": "Widget Prospect",
@@ -351,6 +365,13 @@
     }
   ],
   "activity": [
+    {
+      "id": "4e21244a-bea0-4d59-9775-a69cd6ed0aa7",
+      "type": "lead_captured",
+      "title": "New lead captured",
+      "description": "rgrgrg from efdfgfg entered the pipeline.",
+      "timestamp": "2026-10-07T06:40:31.738Z"
+    },
     {
       "id": "20212a64-c622-4985-9ebc-a8c1193883c2",
       "type": "dunning_sent",

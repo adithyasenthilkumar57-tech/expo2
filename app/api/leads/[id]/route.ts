@@ -1,44 +1,45 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB, addActivity } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = readDB();
-  const lead = db.leads.find(l => l.id === id);
+  const lead = await prisma.lead.findUnique({ where: { id } });
   if (!lead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
   return NextResponse.json(lead);
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = readDB();
-  const idx = db.leads.findIndex(l => l.id === id);
-  if (idx === -1) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
-
   const body = await req.json();
-  const oldStatus = db.leads[idx].status;
-  const updatedLead = {
-    ...db.leads[idx],
-    ...body,
-    lastTouch: new Date().toISOString(),
-  };
 
-  db.leads[idx] = updatedLead;
-  writeDB(db);
+  const existing = await prisma.lead.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
 
-  if (body.status && body.status !== oldStatus) {
+  const updatedLead = await prisma.lead.update({
+    where: { id },
+    data: {
+      ...body,
+      lastTouch: new Date(),
+    },
+  });
+
+  if (body.status && body.status !== existing.status) {
     if (body.status === 'hot') {
-      addActivity(
-        'lead_qualified',
-        'Lead qualified as hot',
-        `${updatedLead.name} · ${updatedLead.company} · $${updatedLead.value.toLocaleString()} value`
-      );
+      await prisma.activityEvent.create({
+        data: {
+          type: 'lead_qualified',
+          title: 'Lead qualified as hot',
+          description: `${updatedLead.name} · ${updatedLead.company} · $${updatedLead.value.toLocaleString()} value`,
+        },
+      });
     } else if (body.status === 'escalated') {
-      addActivity(
-        'lead_qualified',
-        'Lead escalated to operator',
-        `High priority escalation: ${updatedLead.name} from ${updatedLead.company}`
-      );
+      await prisma.activityEvent.create({
+        data: {
+          type: 'lead_qualified',
+          title: 'Lead escalated to operator',
+          description: `High priority escalation: ${updatedLead.name} from ${updatedLead.company}`,
+        },
+      });
     }
   }
 
@@ -47,11 +48,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = readDB();
-  const idx = db.leads.findIndex(l => l.id === id);
-  if (idx === -1) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+  const existing = await prisma.lead.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
 
-  const deleted = db.leads.splice(idx, 1)[0];
-  writeDB(db);
-  return NextResponse.json({ success: true, deletedLead: deleted });
+  await prisma.lead.delete({ where: { id } });
+  return NextResponse.json({ success: true, deletedLead: existing });
 }

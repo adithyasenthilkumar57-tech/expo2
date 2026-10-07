@@ -380,6 +380,7 @@ function OverviewPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
     activePipeline: number; qualifiedLeads: number; avgResponseSla: string; invoiceRecovery: string;
     collected: number; outstanding: number; overdue: number; recoveryRate: number;
     recentActivity: ActivityEvent[]; pipelineVelocity: { total: number; growth: number; weekly: number[] };
+    ownerName: string;
   } | null>(null);
 
   useEffect(() => {
@@ -401,7 +402,7 @@ function OverviewPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
       <div className="hero-banner">
         <div className="hero-content">
           <div className="hero-label"><span className="hero-dot" /> Live workspace telemetry</div>
-          <div className="hero-title">Good {greeting}, Marcus.</div>
+          <div className="hero-title">Good {greeting}, {data?.ownerName?.split(' ')[0] ?? 'Marcus'}.</div>
           <div className="hero-subtitle">Your operator is already moving.</div>
           <div className="hero-desc">Qualified leads, recovered revenue, and scheduled conversations — all coordinated from one intelligent workspace.</div>
           <div className="hero-actions">
@@ -1347,19 +1348,20 @@ function KnowledgePage() {
 
 // ─── Smart Widget Page ────────────────────────────────────────────────────────
 function SmartWidgetPage() {
-  const [settings, setSettings] = useState({ agentName: 'OpsAgent', openingMessage: 'Hi! I can help you qualify your next project.', accentColor: '#00d4c8' });
-  const [messages, setMessages] = useState([
-    { role: 'bot', text: 'Hi! I can help you qualify your next project.' },
-    { role: 'user', text: "I'm looking for help with a new project." },
-    { role: 'bot', text: "Great — I can help with that. What outcome are you hoping to achieve?" },
-  ]);
+  const [settings, setSettings] = useState({ agentName: 'OpsAgent', openingMessage: 'Hi! I can help you qualify your next project and answer pricing or schedule questions.', accentColor: '#00d4c8' });
+  const [messages, setMessages] = useState<{ role: string; text: string }[]>([]);
   const [input, setInput] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const colors = ['#00d4c8', '#7c6ef4', '#3b7bff', '#ff5b5b', '#f5a623', '#00c48c'];
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
-      if (d.settings) setSettings({ agentName: d.settings.agentName, openingMessage: d.settings.openingMessage, accentColor: d.settings.accentColor });
+      if (d.settings) {
+        const s = d.settings;
+        setSettings({ agentName: s.agentName, openingMessage: s.openingMessage, accentColor: s.accentColor });
+        // Set the real opening message as the first chat bubble
+        setMessages([{ role: 'bot', text: s.openingMessage }]);
+      }
     });
   }, []);
 
@@ -1670,7 +1672,7 @@ function SettingsPage() {
           {tab === 'account' && (
             <div className="card card-p">
               <div className="flex items-center gap-10 mb-5">
-                <div className="user-avatar" style={{ width: 48, height: 48, fontSize: 16 }}>MV</div>
+                <div className="user-avatar" style={{ width: 48, height: 48, fontSize: 16 }}>{form.ownerName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'MV'}</div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16 }}>Account profile</div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Your workspace owner details</div>
@@ -1830,7 +1832,9 @@ export default function AppPage() {
   const [showCommand, setShowCommand] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [counts, setCounts] = useState<{ leads: number; pendingInvoices: number }>({ leads: 14, pendingInvoices: 3 });
+  const [counts, setCounts] = useState<{ leads: number; pendingInvoices: number }>({ leads: 0, pendingInvoices: 0 });
+  const [notifications, setNotifications] = useState<ActivityEvent[]>([]);
+  const [ownerName, setOwnerName] = useState('Marcus Vance');
 
   useEffect(() => {
     fetch('/api/overview')
@@ -1839,7 +1843,14 @@ export default function AppPage() {
         if (d.totalLeads !== undefined && d.pendingInvoices !== undefined) {
           setCounts({ leads: d.totalLeads, pendingInvoices: d.pendingInvoices });
         }
+        if (d.ownerName) setOwnerName(d.ownerName);
       })
+      .catch(() => {});
+
+    // Load recent activity for notifications panel
+    fetch('/api/activity?limit=5')
+      .then(r => r.json())
+      .then(d => { if (d.events) setNotifications(d.events.slice(0, 5)); })
       .catch(() => {});
   }, [page]);
 
@@ -1929,9 +1940,9 @@ export default function AppPage() {
             <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}><HelpCircle size={14} /></button>
           </div>
           <div className="user-profile" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>
-            <div className="user-avatar">MV</div>
+            <div className="user-avatar">{ownerName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}</div>
             <div className="user-info">
-              <div className="user-name">Marcus Vance</div>
+              <div className="user-name">{ownerName}</div>
               <div className="user-role">Administrator</div>
             </div>
             <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', marginLeft: 'auto' }}><SlidersHorizontal size={14} /></button>
@@ -1966,20 +1977,25 @@ export default function AppPage() {
               </button>
               {showNotif && (
                 <div className="notification-panel">
-                  <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)', fontWeight: 700, fontSize: 14 }}>Notifications</div>
-                  {['New lead: Chris Nguyen escalated', 'INV-2026-003 is overdue — $12,400', 'Discovery Call confirmed for tomorrow'].map((n, i) => (
-                    <div key={i} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)', fontWeight: 700, fontSize: 14 }}>Recent Activity</div>
+                  {notifications.length > 0 ? notifications.map((ev) => (
+                    <div key={ev.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                       <span style={{ width: 6, height: 6, background: 'var(--accent-cyan)', borderRadius: '50%', marginTop: 5, flexShrink: 0 }} />
-                      {n}
+                      <div>
+                        <div style={{ fontWeight: 600, marginBottom: 1 }}>{ev.title}</div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{ev.description.slice(0, 70)}{ev.description.length > 70 ? '…' : ''}</div>
+                      </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div style={{ padding: '16px', fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>No recent activity</div>
+                  )}
                 </div>
               )}
             </div>
             <button className="icon-btn" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} title="Toggle theme">
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <button className="user-btn" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>MV</button>
+            <button className="user-btn" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>{ownerName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}</button>
           </div>
         </header>
 

@@ -1,39 +1,46 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB, addActivity } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = readDB();
-  const inv = db.invoices.find(i => i.id === id);
+  const inv = await prisma.invoice.findUnique({ where: { id }, include: { items: true } });
   if (!inv) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
   return NextResponse.json(inv);
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = readDB();
-  const idx = db.invoices.findIndex(i => i.id === id);
-  if (idx === -1) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
-
   const body = await req.json();
-  const oldStatus = db.invoices[idx].status;
-  const updatedInv = { ...db.invoices[idx], ...body };
-  db.invoices[idx] = updatedInv;
-  writeDB(db);
 
-  if (body.status && body.status !== oldStatus) {
+  const existing = await prisma.invoice.findUnique({ where: { id }, include: { items: true } });
+  if (!existing) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { items, ...updateData } = body;
+
+  const updatedInv = await prisma.invoice.update({
+    where: { id },
+    data: updateData,
+    include: { items: true },
+  });
+
+  if (body.status && body.status !== existing.status) {
     if (body.status === 'paid') {
-      addActivity(
-        'invoice_paid',
-        'Invoice paid',
-        `${updatedInv.client} paid ${updatedInv.invoiceNumber} — $${updatedInv.amount.toLocaleString()} collected.`
-      );
+      await prisma.activityEvent.create({
+        data: {
+          type: 'invoice_paid',
+          title: 'Invoice paid',
+          description: `${updatedInv.client} paid ${updatedInv.invoiceNumber} — $${updatedInv.amount.toLocaleString()} collected.`,
+        },
+      });
     } else if (body.status === 'sent') {
-      addActivity(
-        'invoice_sent',
-        'Invoice sent',
-        `${updatedInv.invoiceNumber} sent to ${updatedInv.client} (${updatedInv.email}) for $${updatedInv.amount.toLocaleString()}`
-      );
+      await prisma.activityEvent.create({
+        data: {
+          type: 'invoice_sent',
+          title: 'Invoice sent',
+          description: `${updatedInv.invoiceNumber} sent to ${updatedInv.client} (${updatedInv.email}) for $${updatedInv.amount.toLocaleString()}`,
+        },
+      });
     }
   }
 
@@ -42,11 +49,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = readDB();
-  const idx = db.invoices.findIndex(i => i.id === id);
-  if (idx === -1) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+  const existing = await prisma.invoice.findUnique({ where: { id }, include: { items: true } });
+  if (!existing) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
 
-  const deleted = db.invoices.splice(idx, 1)[0];
-  writeDB(db);
-  return NextResponse.json({ success: true, deletedInvoice: deleted });
+  await prisma.invoice.delete({ where: { id } });
+  return NextResponse.json({ success: true, deletedInvoice: existing });
 }
