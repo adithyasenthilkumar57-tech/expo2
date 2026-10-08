@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const { id } = await params;
 
   const invoice = await prisma.invoice.findUnique({
