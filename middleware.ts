@@ -5,14 +5,37 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('ops3_session')?.value;
 
-  // If already authenticated and user visits /login, redirect straight to /app
-  // This satisfies: "if they fill their details they can get logged in and dont show again signin page in there"
-  if (pathname.startsWith('/login') && sessionCookie) {
-    return NextResponse.redirect(new URL('/app', request.url));
+  // 1. Public assets and auth endpoints never block
+  if (
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/widget') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname === '/robots.txt'
+  ) {
+    return NextResponse.next();
   }
 
-  // Optional login / Open preview mode:
-  // Anyone scanning the QR code or visiting the URL can freely view and explore /app
+  // 2. If already logged in and visiting /login, redirect straight to /app
+  // "dont show again signin page in there"
+  if (pathname.startsWith('/login')) {
+    if (sessionCookie) {
+      return NextResponse.redirect(new URL('/app', request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // 3. If NOT logged in and scanning QR code / visiting /app (or root /):
+  // Direct them to /login first so they can fill their details!
+  if (!sessionCookie) {
+    // Allow internal API fetches so nothing crashes
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.next();
+    }
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // 4. Logged in user has full direct access to /app
   return NextResponse.next();
 }
 
