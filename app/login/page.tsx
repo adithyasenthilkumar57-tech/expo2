@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Zap, Shield, Mail, Lock, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin@ops3.com');
+  const [email, setEmail] = useState('cresconix@gmail.com');
   const [password, setPassword] = useState('ops3admin123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -197,7 +197,7 @@ export default function LoginPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94a3b8', fontWeight: 600, marginBottom: 4 }}>
             <Shield size={13} color="#00d4c8" /> Default Administrator Access
           </div>
-          <div>Email: <strong style={{ color: '#cbd5e1' }}>admin@ops3.com</strong></div>
+          <div>Email: <strong style={{ color: '#cbd5e1' }}>cresconix@gmail.com</strong></div>
           <div>Password: <strong style={{ color: '#cbd5e1' }}>ops3admin123</strong></div>
         </div>
       </div>
