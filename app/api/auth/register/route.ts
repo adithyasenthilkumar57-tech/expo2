@@ -65,12 +65,13 @@ export async function POST(req: Request) {
     }
 
     // Auto sign-in after registration
-    await setSessionCookie({
+    const userPayload = {
       userId: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-    });
+    };
+    const token = await setSessionCookie(userPayload);
 
     // Sync registration to Google Sheets if configured
     syncToGoogleSheets({
@@ -79,10 +80,18 @@ export async function POST(req: Request) {
       action: 'signup',
     }).catch(() => {});
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: userPayload,
     });
+    response.cookies.set('ops3_session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60,
+    });
+    return response;
   } catch (err) {
     console.error('Register error fallback:', err);
     // Graceful fallback
@@ -92,7 +101,15 @@ export async function POST(req: Request) {
       name: 'Workspace Member',
       role: 'Administrator',
     };
-    await setSessionCookie(fallbackUser);
-    return NextResponse.json({ success: true, user: fallbackUser });
+    const fallbackToken = await setSessionCookie(fallbackUser);
+    const response = NextResponse.json({ success: true, user: fallbackUser });
+    response.cookies.set('ops3_session', fallbackToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60,
+    });
+    return response;
   }
 }

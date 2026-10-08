@@ -44,16 +44,21 @@ export async function getCurrentUser(): Promise<SessionPayload | null> {
   return verifySession(token);
 }
 
-export async function setSessionCookie(payload: Omit<SessionPayload, 'exp'>) {
+export async function setSessionCookie(payload: Omit<SessionPayload, 'exp'>): Promise<string> {
   const token = signSession(payload, 30);
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 30 * 24 * 60 * 60, // 30 days persistent session
-  });
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60, // 30 days persistent session
+    });
+  } catch (err) {
+    console.warn('cookieStore set notice:', err);
+  }
+  return token;
 }
 
 export async function clearSessionCookie() {

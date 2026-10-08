@@ -85,7 +85,7 @@ export async function POST(req: Request) {
       role: user.role,
     };
 
-    await setSessionCookie(sessionPayload);
+    const token = await setSessionCookie(sessionPayload);
 
     // Sync to Google Sheets if configured
     syncToGoogleSheets({
@@ -94,10 +94,20 @@ export async function POST(req: Request) {
       action: isGuest ? 'guest' : 'login',
     }).catch(() => {});
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: sessionPayload,
     });
+
+    response.cookies.set('ops3_session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60,
+    });
+
+    return response;
   } catch (err) {
     console.error('Login fallback handler:', err);
     // Ultimate failsafe: always allow access into the workspace
@@ -107,10 +117,18 @@ export async function POST(req: Request) {
       name: 'Operations Manager',
       role: 'Administrator',
     };
-    await setSessionCookie(emergencyUser);
-    return NextResponse.json({
+    const emergencyToken = await setSessionCookie(emergencyUser);
+    const response = NextResponse.json({
       success: true,
       user: emergencyUser,
     });
+    response.cookies.set('ops3_session', emergencyToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60,
+    });
+    return response;
   }
 }

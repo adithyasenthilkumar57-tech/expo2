@@ -1940,9 +1940,13 @@ export default function AppPage() {
 
   const handleLogout = async () => {
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('ops3_logged_in');
+        localStorage.removeItem('ops3_user');
+      }
       await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
-      window.location.href = '/login';
+      window.location.replace('/login');
     }
   };
 
