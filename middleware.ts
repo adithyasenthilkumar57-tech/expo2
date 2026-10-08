@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   // Public paths that do not require authentication
   if (
     pathname.startsWith('/login') ||
-    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/auth') || // covers /login, /logout, /me, /register
     pathname.startsWith('/api/widget') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
