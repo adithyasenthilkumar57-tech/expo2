@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import OpenAI from 'openai';
-
-// Featherless AI is OpenAI-compatible
-const ai = new OpenAI({
-  apiKey: process.env.FEATHERLESS_API_KEY || '',
-  baseURL: process.env.FEATHERLESS_BASE_URL || 'https://api.featherless.ai/v1',
-});
-
-const MODEL = process.env.FEATHERLESS_MODEL || 'meta-llama/Llama-3.3-70B-Instruct';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(req: Request) {
   try {
@@ -45,28 +37,24 @@ INSTRUCTIONS:
 - Keep responses friendly but professional
 - If unsure, offer to connect them with the team`;
 
-    // Format chat history for the API
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
-      // Include recent conversation history (last 10 messages)
-      ...(history.slice(-10) as { role: 'user' | 'assistant'; content: string }[]).map(
-        (m: { role: 'user' | 'assistant'; content: string }) => ({
-          role: m.role,
-          content: m.content,
-        })
-      ),
-      { role: 'user', content: message },
-    ];
+    // Build conversation history for Gemini (alternating user/model)
+    const chatHistory = (history.slice(-10) as { role: string; text: string }[]).map(
+      (m: { role: string; text: string }) => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }],
+      })
+    );
 
-    // Call Featherless AI
-    const completion = await ai.chat.completions.create({
-      model: MODEL,
-      messages,
-      max_tokens: 300,
-      temperature: 0.7,
+    // Call Google Gemini
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: systemPrompt,
     });
 
-    const reply = completion.choices[0]?.message?.content?.trim() || 
+    const chat = model.startChat({ history: chatHistory });
+    const result = await chat.sendMessage(message);
+    const reply = result.response.text()?.trim() ||
       "Thanks for reaching out! Could you share your email so our team can follow up with you directly?";
 
     // Auto-capture lead if email is detected
@@ -76,11 +64,11 @@ INSTRUCTIONS:
     if (emailMatch) {
       const email = emailMatch[0];
       const existing = await prisma.lead.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
-      
+
       if (!existing) {
         const words = message.replace(email, '').trim().split(/\s+/);
         const nameGuess = words.filter(w => w.length > 1).slice(0, 2).join(' ') || 'Inbound Visitor';
-        
+
         capturedLead = await prisma.lead.create({
           data: {
             name: nameGuess,
@@ -121,7 +109,6 @@ INSTRUCTIONS:
     });
   } catch (err) {
     console.error('Error in widget chat:', err);
-    // Fallback response if AI fails
     return NextResponse.json({
       reply: "Thanks for your message! Please share your email address and our team will follow up with you shortly.",
       agentName: 'OpsAgent',
