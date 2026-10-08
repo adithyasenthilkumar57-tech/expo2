@@ -12,7 +12,7 @@ export interface SessionPayload {
   exp: number; // unix timestamp in ms
 }
 
-export function signSession(payload: Omit<SessionPayload, 'exp'>, expiresInDays = 7): string {
+export function signSession(payload: Omit<SessionPayload, 'exp'>, expiresInDays = 30): string {
   const exp = Date.now() + expiresInDays * 24 * 60 * 60 * 1000;
   const fullPayload: SessionPayload = { ...payload, exp };
   const data = Buffer.from(JSON.stringify(fullPayload)).toString('base64url');
@@ -45,14 +45,14 @@ export async function getCurrentUser(): Promise<SessionPayload | null> {
 }
 
 export async function setSessionCookie(payload: Omit<SessionPayload, 'exp'>) {
-  const token = signSession(payload);
+  const token = signSession(payload, 30);
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 30 * 24 * 60 * 60, // 30 days persistent session
   });
 }
 

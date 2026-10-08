@@ -1635,33 +1635,75 @@ button, a, input, select, textarea, [role="button"] {
     height: calc(56px + var(--sat));
     padding: var(--sat) 14px 0 14px;
     gap: 8px;
+    max-width: 100vw;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   .header-menu-btn {
     display: flex;
+    flex-shrink: 0;
+  }
+  .header-title-group {
+    min-width: 0;
+    overflow: hidden;
+    flex: 1;
   }
   .header-subtitle {
     display: none;
   }
   .header-title {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .search-bar {
     display: none;
   }
   .search-btn-mobile {
     display: flex;
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    flex-shrink: 0;
+  }
+  .header-desktop-only {
+    display: none !important;
   }
 
-  /* Layout & Main content spacing for Bottom Bar */
+  /* Universal mobile overflow & auto-zoom protection */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  .app-layout {
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+  }
   .main-content {
     padding-bottom: calc(66px + var(--sab));
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+    min-width: 0;
   }
   .page-content {
-    padding: 16px 16px 24px;
+    padding: 16px 14px 24px;
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .card, .stat-card {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS Safari auto-zoom blowout */
   }
 
   /* Header page title section */

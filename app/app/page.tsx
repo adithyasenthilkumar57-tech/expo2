@@ -7,7 +7,7 @@ import {
   Search, HelpCircle, SlidersHorizontal, List, Grid3X3,
   Plus, Mail, Trash2, Edit, Check, MoreHorizontal, Upload,
   AlertTriangle, Clock, DollarSign, TrendingUp, Users, RefreshCw,
-  ArrowUpRight, Palette, Shield, ExternalLink, Menu, LogOut
+  ArrowUpRight, Palette, Shield, ExternalLink, Menu, LogOut, LogIn
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -649,7 +649,7 @@ function LeadsPage() {
     if (q) p.set('q', q);
     const r = await fetch(`/api/leads?${p}`);
     const d = await r.json();
-    setLeads(d.leads);
+    setLeads(Array.isArray(d?.leads) ? d.leads : []);
   };
   useEffect(() => { load(); }, [filter, q]);
 
@@ -887,7 +887,7 @@ function InvoicesPage() {
   const load = async () => {
     const r = await fetch('/api/invoices');
     const d = await r.json();
-    setInvoices(d.invoices);
+    setInvoices(Array.isArray(d?.invoices) ? d.invoices : []);
   };
   useEffect(() => { load(); }, []);
 
@@ -1101,7 +1101,7 @@ function AppointmentsPage() {
   const load = async () => {
     const r = await fetch('/api/appointments');
     const d = await r.json();
-    setAppointments(d.appointments);
+    setAppointments(Array.isArray(d?.appointments) ? d.appointments : []);
   };
   useEffect(() => { load(); }, []);
 
@@ -1295,7 +1295,7 @@ function KnowledgePage() {
   const load = async () => {
     const r = await fetch('/api/knowledge');
     const d = await r.json();
-    setSources(d.sources);
+    setSources(Array.isArray(d?.sources) ? d.sources : []);
   };
   useEffect(() => { load(); }, []);
 
@@ -1599,7 +1599,7 @@ function ActivityLogPage() {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    fetch('/api/activity').then(r => r.json()).then(d => setEvents(d.events));
+    fetch('/api/activity').then(r => r.json()).then(d => setEvents(Array.isArray(d?.events) ? d.events : [])).catch(() => {});
   }, []);
 
   const iconMap: Record<string, React.ReactNode> = {
@@ -1936,6 +1936,7 @@ export default function AppPage() {
   const [counts, setCounts] = useState<{ leads: number; pendingInvoices: number }>({ leads: 0, pendingInvoices: 0 });
   const [notifications, setNotifications] = useState<ActivityEvent[]>([]);
   const [ownerName, setOwnerName] = useState('Marcus Vance');
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -1944,6 +1945,18 @@ export default function AppPage() {
       window.location.href = '/login';
     }
   };
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(d => {
+        if (d.authenticated && d.user) {
+          setCurrentUser(d.user);
+          if (d.user.name) setOwnerName(d.user.name);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('/api/overview')
@@ -2048,13 +2061,33 @@ export default function AppPage() {
             </div>
             <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}><HelpCircle size={14} /></button>
           </div>
-          <div className="user-profile" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>
-            <div className="user-avatar">{ownerName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}</div>
-            <div className="user-info">
-              <div className="user-name">{ownerName}</div>
-              <div className="user-role">Administrator</div>
+          {currentUser ? (
+            <div className="user-profile" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>
+              <div className="user-avatar">{ownerName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}</div>
+              <div className="user-info">
+                <div className="user-name">{ownerName}</div>
+                <div className="user-role">Administrator</div>
+              </div>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', marginLeft: 'auto' }}><SlidersHorizontal size={14} /></button>
             </div>
-            <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', marginLeft: 'auto' }}><SlidersHorizontal size={14} /></button>
+          ) : (
+            <div style={{ padding: '10px 12px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', marginBottom: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Guest Preview</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.3 }}>Viewing live workspace. Sign in anytime to personalize.</div>
+              <a href="/login" className="btn btn-primary btn-sm" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none', fontSize: 12, height: 32 }}>
+                <LogIn size={13} /> Sign In
+              </a>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            <button className="btn btn-secondary btn-sm" style={{ flex: 1, justifyContent: 'center', fontSize: 11, height: 32 }} onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}>
+              {theme === 'dark' ? <><Sun size={12} /> Light</> : <><Moon size={12} /> Dark</>}
+            </button>
+            {currentUser && (
+              <button className="icon-btn" style={{ width: 32, height: 32, color: 'var(--accent-red)' }} onClick={handleLogout} title="Sign out">
+                <LogOut size={13} />
+              </button>
+            )}
           </div>
         </div>
       </aside>
@@ -2101,13 +2134,23 @@ export default function AppPage() {
                 </div>
               )}
             </div>
-            <button className="icon-btn" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} title="Toggle theme">
+            <button className="icon-btn header-desktop-only" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} title="Toggle theme">
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <button className="user-btn" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>{ownerName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}</button>
-            <button className="icon-btn" onClick={handleLogout} title="Sign out" style={{ color: 'var(--text-muted)' }}>
-              <LogOut size={16} />
-            </button>
+            {currentUser ? (
+              <>
+                <button className="user-btn header-desktop-only" onClick={() => { setPage('settings'); setMobileMenuOpen(false); }}>
+                  {ownerName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                </button>
+                <button className="icon-btn header-desktop-only" onClick={handleLogout} title="Sign out" style={{ color: 'var(--text-muted)' }}>
+                  <LogOut size={16} />
+                </button>
+              </>
+            ) : (
+              <a href="/login" className="btn btn-primary btn-sm" style={{ padding: '6px 14px', fontSize: 13, height: 34, gap: 6, textDecoration: 'none', borderRadius: 8, whiteSpace: 'nowrap' }}>
+                <LogIn size={14} /> Sign In
+              </a>
+            )}
           </div>
         </header>
 
