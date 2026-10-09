@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Zap, X, ChevronDown, LayoutDashboard, KanbanSquare, FileText, 
-  Calendar, BookOpen, Cpu, Activity, Settings, Bell, Sun, Moon,
+  Calendar, BookOpen, MessageSquare, Cpu, Activity, Settings, Bell, Sun, Moon,
   Search, HelpCircle, SlidersHorizontal, List, Grid3X3,
   Plus, Mail, Trash2, Edit, Check, MoreHorizontal, Upload,
   AlertTriangle, Clock, DollarSign, TrendingUp, Users, RefreshCw,
@@ -76,7 +76,7 @@ function CommandPalette({ onClose, onNavigate }: { onClose: () => void; onNaviga
     { label: 'Leads pipeline', page: 'leads' as Page, icon: <KanbanSquare size={15} /> },
     { label: 'Invoices', page: 'invoices' as Page, icon: <FileText size={15} /> },
     { label: 'Appointments', page: 'appointments' as Page, icon: <Calendar size={15} /> },
-    { label: 'Knowledge base', page: 'knowledge' as Page, icon: <BookOpen size={15} /> },
+    { label: 'Feedback', page: 'knowledge' as Page, icon: <MessageSquare size={15} /> },
     { label: 'Smart widget', page: 'widget' as Page, icon: <Cpu size={15} /> },
     { label: 'Activity log', page: 'activity' as Page, icon: <Activity size={15} /> },
     { label: 'Workspace settings', page: 'settings' as Page, icon: <Settings size={15} /> },
@@ -1338,7 +1338,7 @@ function KnowledgePage() {
       <div className="page-header page-header-row">
         <div>
           <div className="page-label">RAG context layer</div>
-          <h1 className="page-title">Knowledge base</h1>
+          <h1 className="page-title">Feedback</h1>
           <p className="page-description">Ground every autonomous answer in your actual offers, FAQs, and operating rules.</p>
         </div>
         <div className="flex gap-2 flex-wrap" style={{ maxWidth: 380, width: '100%' }}>
@@ -1998,7 +1998,7 @@ export default function AppPage() {
     { id: 'leads' as Page, label: 'Leads pipeline', icon: <KanbanSquare size={15} />, badge: String(counts.leads), section: 'workspace' },
     { id: 'invoices' as Page, label: 'Invoices', icon: <FileText size={15} />, badge: String(counts.pendingInvoices), section: 'workspace' },
     { id: 'appointments' as Page, label: 'Appointments', icon: <Calendar size={15} />, section: 'workspace' },
-    { id: 'knowledge' as Page, label: 'Knowledge base', icon: <BookOpen size={15} />, section: 'tools' },
+    { id: 'knowledge' as Page, label: 'Feedback', icon: <MessageSquare size={15} />, section: 'tools' },
     { id: 'widget' as Page, label: 'Smart widget', icon: <Cpu size={15} />, section: 'tools' },
     { id: 'activity' as Page, label: 'Activity log', icon: <Activity size={15} />, section: 'tools' },
     { id: 'settings' as Page, label: 'Workspace settings', icon: <Settings size={15} />, section: 'tools' },
@@ -2006,7 +2006,7 @@ export default function AppPage() {
 
   const pageTitles: Record<Page, string> = {
     overview: 'Overview', leads: 'Leads pipeline', invoices: 'Invoices',
-    appointments: 'Appointments', knowledge: 'Knowledge base', widget: 'Smart widget',
+    appointments: 'Appointments', knowledge: 'Feedback', widget: 'Smart widget',
     activity: 'Activity log', settings: 'Workspace settings',
   };
 
